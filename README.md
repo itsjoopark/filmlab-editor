@@ -2,7 +2,7 @@
 
 An open-source film photo editor that runs entirely in the browser. Inspired by VSCO and Adobe Lightroom. One HTML file, no install, no server — your photos never leave your machine.
 
-![Project Screenshot](<img width="1351" height="859" alt="filmlab-editor" src="https://github.com/user-attachments/assets/64e1f5c7-1e55-4ca5-b41a-246474189f61" />)
+![Filmlab Editor](images/filmlab-editor.png)
 
 ## Use it
 
