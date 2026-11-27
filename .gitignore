@@ -1,0 +1,15 @@
+# Licensed fonts (ABC Areal, Dinamo) — keep locally, never commit
+fonts/
+# Standalone build embeds the fonts — never commit
+dist/
+
+# Python
+__pycache__/
+*.pyc
+
+# macOS
+.DS_Store
+
+# Local tooling and scratch files
+.claude/
+*.zip
