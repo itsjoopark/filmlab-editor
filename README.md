@@ -14,7 +14,7 @@ Open `index.html` in a recent Chrome, Edge, Safari or Firefox (WebGL2 required).
 - **Works on phones** — the editor adapts to small screens and touch.
 - **Light & colour** — exposure, contrast, highlights, shadows, fade, temperature, tint, saturation, vibrance, black & white, split toning.
 - **Film character** — resolution-aware grain, halation, vignette, and presets (Portra 400, Gold 200, Ektar 100, Fuji 400H, Cinestill 800T, Superia 400, Tri-X 400, HP5 Plus).
-- **Generative effects** — pixelate/LED, Bayer and noise dithering, CMY halftone, gaussian splats, Voronoi glass, Kuwahara, flow lines (LIC), ink edges, ASCII, CRT.
+- **Generative effects** — pixelate/LED, Bayer and noise dithering, CMY halftone, gaussian splats, Voronoi glass, Kuwahara, flow lines (LIC), ink edges, ASCII, CRT. A **Code editor** switch shows each effect's GLSL source to edit or copy; changes compile live, errors point to the line, and edits are saved in the browser.
 - **Crop & rotate** — film-format aspect ratios (35mm, 645, 6×7, 4×5, XPan), straighten with auto-fit, 90° rotation, flips.
 - **Batch** — import a folder, per-image edits and history, apply a look to every frame.
 - **Export** — JPEG, PNG, WebP, AVIF, TIFF, BMP; several formats and several images at once as a .zip; full-size or scaled.

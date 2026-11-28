@@ -65,6 +65,27 @@ main{flex:1;min-height:0;display:flex;flex-direction:column;gap:6px;padding:0 10
 @media (hover:hover) and (pointer:fine){.sndt:hover{color:#fff}}
 .sndt:focus-visible{outline:none;color:#fff;text-decoration:underline;text-underline-offset:3px}
 /* scroll edge fades: an overlay laid exactly over the panel (same radius), so the fade follows its curve */
+.ced{display:flex;flex-direction:column;gap:6px;margin-top:2px}
+.ced-h{display:flex;align-items:center;gap:6px}
+.ced-f{font-family:var(--mono);font-size:11px;color:var(--lab)}
+.ced-st{flex:1;font-size:10.5px;color:#f0b765}
+.ced-h .b{height:24px;padding:0 9px;font-size:11px}
+.ced-b{position:relative;display:flex;height:300px;border-radius:10px;overflow:hidden;background:rgba(6,6,8,.72);border:1px solid rgba(255,255,255,.08);font:11px/16px var(--mono);font-variant-ligatures:none;resize:vertical;min-height:160px}
+.ced-b:focus-within{border-color:rgba(91,147,255,.6)}
+.ced-g{flex:none;width:30px;padding:8px 6px 8px 0;text-align:right;color:rgba(255,255,255,.22);user-select:none;border-right:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.02)}
+.ced-g span{display:block}
+.ced-s{position:relative;flex:1;min-width:0;overflow:hidden}
+.ced-p,.ced-s textarea{margin:0;padding:8px 10px;font:inherit;letter-spacing:0;tab-size:2;white-space:pre}
+.ced-p{position:absolute;left:0;top:0;color:#d6d9e0;pointer-events:none}
+.ced-s textarea{position:absolute;inset:0;width:100%;height:100%;resize:none;border:0;outline:none;background:transparent;color:transparent;caret-color:#fff;overflow:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.2) transparent}
+.ced-s textarea::selection{background:rgba(91,147,255,.35)}
+.ced-p i{font-style:normal}.ced-p .c{color:#6f7d74}.ced-p .k{color:#d39bf0}.ced-p .t{color:#7fb6ff}.ced-p .n{color:#f4b678}.ced-p .f{color:#8fd6c9}.ced-p .u{color:#f08aa8}
+.ced-m{min-height:16px;font-size:11px;color:var(--dim)}
+.ced-m.ok{color:#7fd39a}.ced-m.err{color:#ff8a80}.ced-m.err b{font-weight:500;color:#ffb3ab}
+.ced .ced-none{display:none;color:var(--dim)}
+.ced.empty>:not(.ced-none){display:none}.ced.empty .ced-none{display:block}
+#fxChips .b.mod{position:relative}#fxChips .b.mod::after{content:"";position:absolute;top:4px;right:4px;width:5px;height:5px;border-radius:50%;background:#f0b765}
+@media (pointer:coarse){.ced-b{font-size:12px;line-height:18px}}
 .pfx{position:absolute;z-index:7;pointer-events:none;overflow:hidden;display:none}
 .pfx.on{display:block}
 .pfx i{position:absolute;left:0;right:0;height:48px;opacity:0;transition:opacity 420ms ease}
@@ -396,7 +417,7 @@ const stage=$('#stage'),view=$('#view'),cv=$('#cv'),ov=$('#ov'),cb=$('#cb'),stri
 const gl=cv.getContext('webgl2',{preserveDrawingBuffer:true,antialias:false,premultipliedAlpha:false});
 const VS=`#version 300 es
 in vec2 p;out vec2 v;void main(){v=vec2(p.x*.5+.5,.5-p.y*.5);gl_Position=vec4(p,0,1);}`;
-const FS=`#version 300 es
+const FS0=`#version 300 es
 precision highp float;
 in vec2 v;out vec4 o;
 uniform sampler2D T;
@@ -456,73 +477,7 @@ float bayer8(vec2 a){return bayer4(.5*a)*.25+bayer2(a);}
 float ign(vec2 p){return fract(52.9829189*fract(dot(p,vec2(.06711056,.00583715))));}
 mat2 rot(float a){float c=cos(a),s=sin(a);return mat2(c,-s,s,c);}
 vec2 grad(vec2 g,vec2 e){return vec2(lum(g+vec2(e.x,0))-lum(g-vec2(e.x,0)),lum(g+vec2(0,e.y))-lum(g-vec2(0,e.y)));}
-vec3 fx(vec2 g){
- vec2 px=g*OUT;float s=max(FXS*max(OUT.x,OUT.y)/1000.,1.);
- if(FX==1){ // pixelate / LED mosaic
-  vec2 c=(floor(px/s)+.5)*s;vec3 col=look(c/OUT);
-  if(FXD>.01&&s>3.){float r=length((px-c)/s)*2.,rr=1.-FXD*.55;col*=1.-smoothstep(rr-2./s,rr,r);}
-  return col;}
- if(FX==2||FX==3){ // ordered (Bayer 8x8) or interleaved-gradient-noise dither
-  vec2 cp=floor(px/s);vec3 col=look((cp+.5)*s/OUT);float t=FX==2?bayer8(cp):ign(cp),L=FXL-1.;
-  if(FXP==0)return clamp(floor(col*L+t)/L,0.,1.);
-  float l=clamp(floor(dot(col,LW)*L+t)/L,0.,1.);return FXP==1?vec3(l):mix(INK,PAPER,l);}
- if(FX==4){ // AM halftone: rotated screens, dot area ∝ ink coverage
-  float a0=FXD*1.5708;
-  if(FXP==0){vec3 ink=vec3(0);vec3 an=vec3(.2618,1.309,0.)+a0;
-   for(int k=0;k<3;k++){vec2 q=rot(an[k])*px;vec2 cc=(floor(q/s)+.5)*s;vec3 cs=look((rot(-an[k])*cc)/OUT);float r=sqrt(clamp(1.-cs[k],0.,1.)/3.1416)*s*1.08;ink[k]=1.-smoothstep(r-.8,r+.8,length(q-cc));}
-   return vec3(1.)-ink*.94;}
-  float a=.7854+a0;vec2 q=rot(a)*px;vec2 cc=(floor(q/s)+.5)*s;float l=dot(look((rot(-a)*cc)/OUT),LW);
-  float r=sqrt(clamp(1.-l,0.,1.)/3.1416)*s*1.08,d=1.-smoothstep(r-.8,r+.8,length(q-cc));
-  return FXP==1?vec3(1.-d):mix(PAPER,INK,d);}
- if(FX==5){ // anisotropic gaussian splats on a jittered grid, oriented along image contours
-  vec2 cell=floor(px/s);vec3 acc=vec3(0);float ws=0.,st=1.+FXD*1.6;
-  for(int j=-2;j<=2;j++)for(int i=-2;i<=2;i++){
-   vec2 cc=cell+vec2(i,j),ctr=(cc+vec2(h12(cc+.31),h12(cc+7.7)))*s,gc=ctr/OUT;
-   vec2 gr=grad(gc,vec2(s*.5)/OUT);float an=atan(gr.y,gr.x+1e-6);
-   float sz=s*(.4+.45*h12(cc+3.3));vec2 d=rot(an)*(px-ctr);d.y/=st;
-   float w=exp(-dot(d,d)/(sz*sz*.5));w=w*w*w*(.5+h12(cc+9.1));
-   acc+=look(gc)*w;ws+=w;}
-  return ws>1e-6?acc/ws:look(g);}
- if(FX==6){ // Voronoi / Worley cells — stained glass
-  vec2 cell=floor(px/s);float d1=1e9,d2=1e9;vec2 b=vec2(0);
-  for(int j=-1;j<=1;j++)for(int i=-1;i<=1;i++){vec2 cc=cell+vec2(i,j),p=(cc+.5+(vec2(h12(cc),h12(cc+9.7))-.5)*.85)*s;float d=length(px-p);
-   if(d<d1){d2=d1;d1=d;b=p;}else if(d<d2)d2=d;}
-  vec3 col=look(b/OUT)*(.92+.16*(1.-d1/s));
-  if(FXD<.01)return col;float lw=FXD*s*.12;return mix(INK,col,smoothstep(lw,lw+1.,(d2-d1)*.5));}
- if(FX==7){ // Kuwahara filter — min-variance quadrant mean (painterly)
-  vec2 st=vec2(s/3.)/OUT;vec3 best=vec3(0);float bv=1e9;
-  for(int q=0;q<4;q++){vec2 sg=vec2((q==1||q==3)?-1.:1.,q>=2?-1.:1.);vec3 m=vec3(0),m2=vec3(0);
-   for(int y=0;y<4;y++)for(int x=0;x<4;x++){vec3 c=look(g+vec2(float(x),float(y))*sg*st);m+=c;m2+=c*c;}
-   m/=16.;vec3 va=m2/16.-m*m;float vv=va.r+va.g+va.b;if(vv<bv){bv=vv;best=m;}}
-  return best;}
- if(FX==8){ // line integral convolution of white noise along the luminance-contour field
-  float stp=max(1.,s*.6),cs=max(1.,s*.35),L=0.,nW=0.;
-  for(int dr=0;dr<2;dr++){vec2 p=px,pt=vec2(0);float sg=dr==0?1.:-1.;
-   for(int k=0;k<14;k++){vec2 gr=grad(p/OUT,vec2(stp)/OUT);vec2 t=vec2(-gr.y,gr.x);float tl=length(t);
-    t=tl>1e-4?t/tl:vec2(.7071);if(dot(t,pt)<0.)t=-t;pt=t;float w=1.-float(k)/14.;L+=h12(floor(p/cs))*w;nW+=w;p+=t*stp*sg;}}
-  float lic=clamp((L/nW-.5)*2.6+.5,0.,1.);return look(g)*mix(1.,.2+1.6*lic,FXD);}
- if(FX==9){ // Sobel edge ink
-  vec2 e=vec2(s)/OUT;
-  float tl=dot(look(g+vec2(-e.x,-e.y)),LW),tc=dot(look(g+vec2(0,-e.y)),LW),tr=dot(look(g+vec2(e.x,-e.y)),LW),
-        ml=dot(look(g+vec2(-e.x,0)),LW),mr=dot(look(g+vec2(e.x,0)),LW),
-        bl=dot(look(g+vec2(-e.x,e.y)),LW),bc=dot(look(g+vec2(0,e.y)),LW),br=dot(look(g+vec2(e.x,e.y)),LW);
-  float m=length(vec2(tr+2.*mr+br-tl-2.*ml-bl,bl+2.*bc+br-tl-2.*tc-tr));
-  return mix(mix(PAPER,look(g),FXD),INK,smoothstep(.3,.75,m));}
- if(FX==10){ // ASCII: 5x5 bitmap glyphs picked by cell luminance
-  float cz=max(s,5.);vec2 cc=(floor(px/cz)+.5)*cz;vec3 col=look(cc/OUT);float l=sqrt(dot(col,LW));
-  int n=4096;if(l>.2)n=65600;if(l>.3)n=332772;if(l>.4)n=15255086;if(l>.5)n=23385164;if(l>.6)n=15252014;if(l>.7)n=13199452;if(l>.82)n=11512810;if(l<.18)n=0;
-  vec2 p=(px-cc)/cz*2.;p.y=-p.y;p=floor(p*vec2(-4.,4.)+2.5);float bit=0.;
-  if(p.x>=0.&&p.x<=4.&&p.y>=0.&&p.y<=4.){int a=int(round(p.x+5.*p.y));bit=float((n>>a)&1);}
-  return FXP==0?mix(INK,col*1.2,bit):FXP==1?vec3(bit):mix(INK,PAPER,bit);}
- if(FX==11){ // CRT: barrel distortion, RGB convergence error, scanlines, aperture grille
-  vec2 q=g-.5;q*=1.+FXD*.45*dot(q,q);vec2 g2=q+.5;
-  if(g2.x<0.||g2.y<0.||g2.x>1.||g2.y>1.)return vec3(0);
-  float ca=s*.35/OUT.x;vec3 col=vec3(look(g2+vec2(ca,0)).r,look(g2).g,look(g2-vec2(ca,0)).b);
-  vec2 p2=g2*OUT;col*=.7+.3*(.5+.5*cos(6.2832*p2.y/s));
-  vec3 m=vec3(.78);int tri=int(mod(floor(p2.x/max(1.,s/3.)),3.));m[tri]=1.15;col*=m;
-  vec2 ev=g2*(1.-g2);return col*1.12*pow(clamp(ev.x*ev.y*16.,0.,1.),.12+.25*FXD);}
- return look(g);
-}
+%%FX%%
 void main(){
  LODB=max(0.,-log2(max(PXS,1e-4)));
  vec2 gv=TL.xy+v*TL.zw;
@@ -553,16 +508,329 @@ void main(){
  o=vec4(clamp(c,0.,1.),1.);
 }`;
 
+const FXSRC={
+ pixel:`// Pixelate: edit freely; changes apply live (⌘↵ to force).
+// Your version is used for every image and for export.
+//   g    position in the frame, 0–1    px  output pixel
+//   s    Scale, in pixels              look(uv)  the edited image
+//   FXD  LED gap  FXL Levels  FXP Palette (0 colour, 1 mono, 2 duotone)
+//   INK, PAPER duotone colours   LW luminance weights
+//   h12(p) hash 0–1   rot(a) 2D rotation   grad(uv,e) luminance gradient
+vec3 effect(vec2 g, vec2 px, float s) {
+  vec2 c = (floor(px / s) + 0.5) * s;   // centre of this cell
+  vec3 col = look(c / OUT);             // the image at that centre
+  if (FXD > 0.01 && s > 3.0) {          // round LEDs with a dark gap
+    float r = length((px - c) / s) * 2.0;
+    float rr = 1.0 - FXD * 0.55;
+    col *= 1.0 - smoothstep(rr - 2.0 / s, rr, r);
+  }
+  return col;
+}
+`,
+ bayer:`// Bayer dither: edit freely; changes apply live (⌘↵ to force).
+// Your version is used for every image and for export.
+//   g    position in the frame, 0–1    px  output pixel
+//   s    Scale, in pixels              look(uv)  the edited image
+//   FXD  Detail  FXL Levels  FXP Palette (0 colour, 1 mono, 2 duotone)
+//   INK, PAPER duotone colours   LW luminance weights
+//   h12(p) hash 0–1   rot(a) 2D rotation   grad(uv,e) luminance gradient
+vec3 effect(vec2 g, vec2 px, float s) {
+  vec2 cp = floor(px / s);
+  vec3 col = look((cp + 0.5) * s / OUT);
+  float t = bayer8(cp);  // threshold 0–1: ordered 8×8 Bayer matrix
+  float L = FXL - 1.0;
+  if (FXP == 0) return clamp(floor(col * L + t) / L, 0.0, 1.0);
+  float l = clamp(floor(dot(col, LW) * L + t) / L, 0.0, 1.0);
+  return FXP == 1 ? vec3(l) : mix(INK, PAPER, l);
+}
+`,
+ noise:`// Noise dither: edit freely; changes apply live (⌘↵ to force).
+// Your version is used for every image and for export.
+//   g    position in the frame, 0–1    px  output pixel
+//   s    Scale, in pixels              look(uv)  the edited image
+//   FXD  Detail  FXL Levels  FXP Palette (0 colour, 1 mono, 2 duotone)
+//   INK, PAPER duotone colours   LW luminance weights
+//   h12(p) hash 0–1   rot(a) 2D rotation   grad(uv,e) luminance gradient
+vec3 effect(vec2 g, vec2 px, float s) {
+  vec2 cp = floor(px / s);
+  vec3 col = look((cp + 0.5) * s / OUT);
+  float t = ign(cp);     // threshold 0–1: interleaved gradient noise
+  float L = FXL - 1.0;
+  if (FXP == 0) return clamp(floor(col * L + t) / L, 0.0, 1.0);
+  float l = clamp(floor(dot(col, LW) * L + t) / L, 0.0, 1.0);
+  return FXP == 1 ? vec3(l) : mix(INK, PAPER, l);
+}
+`,
+ halftone:`// Halftone: edit freely; changes apply live (⌘↵ to force).
+// Your version is used for every image and for export.
+//   g    position in the frame, 0–1    px  output pixel
+//   s    Scale, in pixels              look(uv)  the edited image
+//   FXD  Screen angle  FXL Levels  FXP Palette (0 colour, 1 mono, 2 duotone)
+//   INK, PAPER duotone colours   LW luminance weights
+//   h12(p) hash 0–1   rot(a) 2D rotation   grad(uv,e) luminance gradient
+vec3 effect(vec2 g, vec2 px, float s) {
+  float a0 = FXD * 1.5708;              // screen angle
+  if (FXP == 0) {                       // colour: C, M, Y screens
+    vec3 ink = vec3(0.0);
+    vec3 an = vec3(0.2618, 1.309, 0.0) + a0;
+    for (int k = 0; k < 3; k++) {
+      vec2 q = rot(an[k]) * px;
+      vec2 cc = (floor(q / s) + 0.5) * s;
+      vec3 cs = look((rot(-an[k]) * cc) / OUT);
+      // dot area proportional to ink coverage
+      float r = sqrt(clamp(1.0 - cs[k], 0.0, 1.0) / 3.1416) * s * 1.08;
+      ink[k] = 1.0 - smoothstep(r - 0.8, r + 0.8, length(q - cc));
+    }
+    return vec3(1.0) - ink * 0.94;
+  }
+  float a = 0.7854 + a0;                // single 45° screen
+  vec2 q = rot(a) * px;
+  vec2 cc = (floor(q / s) + 0.5) * s;
+  float l = dot(look((rot(-a) * cc) / OUT), LW);
+  float r = sqrt(clamp(1.0 - l, 0.0, 1.0) / 3.1416) * s * 1.08;
+  float d = 1.0 - smoothstep(r - 0.8, r + 0.8, length(q - cc));
+  return FXP == 1 ? vec3(1.0 - d) : mix(PAPER, INK, d);
+}
+`,
+ splat:`// Gaussian: edit freely; changes apply live (⌘↵ to force).
+// Your version is used for every image and for export.
+//   g    position in the frame, 0–1    px  output pixel
+//   s    Scale, in pixels              look(uv)  the edited image
+//   FXD  Stretch  FXL Levels  FXP Palette (0 colour, 1 mono, 2 duotone)
+//   INK, PAPER duotone colours   LW luminance weights
+//   h12(p) hash 0–1   rot(a) 2D rotation   grad(uv,e) luminance gradient
+vec3 effect(vec2 g, vec2 px, float s) {
+  vec2 cell = floor(px / s);
+  vec3 acc = vec3(0.0);
+  float ws = 0.0;
+  float st = 1.0 + FXD * 1.6;           // stretch along contours
+  for (int j = -2; j <= 2; j++)
+  for (int i = -2; i <= 2; i++) {
+    vec2 cc = cell + vec2(i, j);
+    // jittered splat centre
+    vec2 ctr = (cc + vec2(h12(cc + 0.31), h12(cc + 7.7))) * s;
+    vec2 gc = ctr / OUT;
+    vec2 gr = grad(gc, vec2(s * 0.5) / OUT);
+    float an = atan(gr.y, gr.x + 1e-6); // orient to the image
+    float sz = s * (0.4 + 0.45 * h12(cc + 3.3));
+    vec2 d = rot(an) * (px - ctr);
+    d.y /= st;
+    float w = exp(-dot(d, d) / (sz * sz * 0.5));
+    w = w * w * w * (0.5 + h12(cc + 9.1));
+    acc += look(gc) * w;
+    ws += w;
+  }
+  return ws > 1e-6 ? acc / ws : look(g);
+}
+`,
+ voronoi:`// Voronoi glass: edit freely; changes apply live (⌘↵ to force).
+// Your version is used for every image and for export.
+//   g    position in the frame, 0–1    px  output pixel
+//   s    Scale, in pixels              look(uv)  the edited image
+//   FXD  Lead lines  FXL Levels  FXP Palette (0 colour, 1 mono, 2 duotone)
+//   INK, PAPER duotone colours   LW luminance weights
+//   h12(p) hash 0–1   rot(a) 2D rotation   grad(uv,e) luminance gradient
+vec3 effect(vec2 g, vec2 px, float s) {
+  vec2 cell = floor(px / s);
+  float d1 = 1e9, d2 = 1e9;             // nearest, second nearest
+  vec2 b = vec2(0.0);
+  for (int j = -1; j <= 1; j++)
+  for (int i = -1; i <= 1; i++) {
+    vec2 cc = cell + vec2(i, j);
+    vec2 jit = (vec2(h12(cc), h12(cc + 9.7)) - 0.5) * 0.85;
+    vec2 p = (cc + 0.5 + jit) * s;      // this cell's seed
+    float d = length(px - p);
+    if (d < d1) { d2 = d1; d1 = d; b = p; }
+    else if (d < d2) d2 = d;
+  }
+  vec3 col = look(b / OUT) * (0.92 + 0.16 * (1.0 - d1 / s));
+  if (FXD < 0.01) return col;
+  float lw = FXD * s * 0.12;            // lead line width
+  return mix(INK, col, smoothstep(lw, lw + 1.0, (d2 - d1) * 0.5));
+}
+`,
+ kuwa:`// Kuwahara: edit freely; changes apply live (⌘↵ to force).
+// Your version is used for every image and for export.
+//   g    position in the frame, 0–1    px  output pixel
+//   s    Scale, in pixels              look(uv)  the edited image
+//   FXD  Detail  FXL Levels  FXP Palette (0 colour, 1 mono, 2 duotone)
+//   INK, PAPER duotone colours   LW luminance weights
+//   h12(p) hash 0–1   rot(a) 2D rotation   grad(uv,e) luminance gradient
+vec3 effect(vec2 g, vec2 px, float s) {
+  vec2 st = vec2(s / 3.0) / OUT;
+  vec3 best = vec3(0.0);
+  float bv = 1e9;
+  for (int q = 0; q < 4; q++) {         // four quadrants
+    vec2 sg = vec2((q == 1 || q == 3) ? -1.0 : 1.0,
+                   q >= 2 ? -1.0 : 1.0);
+    vec3 m = vec3(0.0), m2 = vec3(0.0);
+    for (int y = 0; y < 4; y++)
+    for (int x = 0; x < 4; x++) {
+      vec3 c = look(g + vec2(float(x), float(y)) * sg * st);
+      m += c;
+      m2 += c * c;
+    }
+    m /= 16.0;
+    vec3 va = m2 / 16.0 - m * m;        // variance
+    float vv = va.r + va.g + va.b;
+    if (vv < bv) { bv = vv; best = m; } // keep the calmest
+  }
+  return best;
+}
+`,
+ flow:`// Flow lines: edit freely; changes apply live (⌘↵ to force).
+// Your version is used for every image and for export.
+//   g    position in the frame, 0–1    px  output pixel
+//   s    Scale, in pixels              look(uv)  the edited image
+//   FXD  Streaks  FXL Levels  FXP Palette (0 colour, 1 mono, 2 duotone)
+//   INK, PAPER duotone colours   LW luminance weights
+//   h12(p) hash 0–1   rot(a) 2D rotation   grad(uv,e) luminance gradient
+vec3 effect(vec2 g, vec2 px, float s) {
+  float stp = max(1.0, s * 0.6);        // step length
+  float cs = max(1.0, s * 0.35);        // noise grain
+  float L = 0.0, nW = 0.0;
+  for (int dr = 0; dr < 2; dr++) {      // trace both directions
+    vec2 p = px, pt = vec2(0.0);
+    float sg = dr == 0 ? 1.0 : -1.0;
+    for (int k = 0; k < 14; k++) {
+      vec2 gr = grad(p / OUT, vec2(stp) / OUT);
+      vec2 t = vec2(-gr.y, gr.x);       // along the contour
+      float tl = length(t);
+      t = tl > 1e-4 ? t / tl : vec2(0.7071);
+      if (dot(t, pt) < 0.0) t = -t;
+      pt = t;
+      float w = 1.0 - float(k) / 14.0;
+      L += h12(floor(p / cs)) * w;
+      nW += w;
+      p += t * stp * sg;
+    }
+  }
+  float lic = clamp((L / nW - 0.5) * 2.6 + 0.5, 0.0, 1.0);
+  return look(g) * mix(1.0, 0.2 + 1.6 * lic, FXD);
+}
+`,
+ ink:`// Ink edges: edit freely; changes apply live (⌘↵ to force).
+// Your version is used for every image and for export.
+//   g    position in the frame, 0–1    px  output pixel
+//   s    Scale, in pixels              look(uv)  the edited image
+//   FXD  Color  FXL Levels  FXP Palette (0 colour, 1 mono, 2 duotone)
+//   INK, PAPER duotone colours   LW luminance weights
+//   h12(p) hash 0–1   rot(a) 2D rotation   grad(uv,e) luminance gradient
+vec3 effect(vec2 g, vec2 px, float s) {
+  vec2 e = vec2(s) / OUT;
+  // luminance of the 3×3 neighbourhood
+  float tl = dot(look(g + vec2(-e.x, -e.y)), LW);
+  float tc = dot(look(g + vec2(0.0, -e.y)), LW);
+  float tr = dot(look(g + vec2(e.x, -e.y)), LW);
+  float ml = dot(look(g + vec2(-e.x, 0.0)), LW);
+  float mr = dot(look(g + vec2(e.x, 0.0)), LW);
+  float bl = dot(look(g + vec2(-e.x, e.y)), LW);
+  float bc = dot(look(g + vec2(0.0, e.y)), LW);
+  float br = dot(look(g + vec2(e.x, e.y)), LW);
+  // Sobel edge strength
+  float gx = tr + 2.0 * mr + br - tl - 2.0 * ml - bl;
+  float gy = bl + 2.0 * bc + br - tl - 2.0 * tc - tr;
+  float m = length(vec2(gx, gy));
+  vec3 fill = mix(PAPER, look(g), FXD); // Color: paper → image
+  return mix(fill, INK, smoothstep(0.3, 0.75, m));
+}
+`,
+ ascii:`// ASCII: edit freely; changes apply live (⌘↵ to force).
+// Your version is used for every image and for export.
+//   g    position in the frame, 0–1    px  output pixel
+//   s    Scale, in pixels              look(uv)  the edited image
+//   FXD  Detail  FXL Levels  FXP Palette (0 colour, 1 mono, 2 duotone)
+//   INK, PAPER duotone colours   LW luminance weights
+//   h12(p) hash 0–1   rot(a) 2D rotation   grad(uv,e) luminance gradient
+vec3 effect(vec2 g, vec2 px, float s) {
+  float cz = max(s, 5.0);               // character cell
+  vec2 cc = (floor(px / cz) + 0.5) * cz;
+  vec3 col = look(cc / OUT);
+  float l = sqrt(dot(col, LW));
+  // 5×5 glyph bitmaps, one per brightness step
+  int n = 4096;
+  if (l > 0.2) n = 65600;
+  if (l > 0.3) n = 332772;
+  if (l > 0.4) n = 15255086;
+  if (l > 0.5) n = 23385164;
+  if (l > 0.6) n = 15252014;
+  if (l > 0.7) n = 13199452;
+  if (l > 0.82) n = 11512810;
+  if (l < 0.18) n = 0;
+  vec2 p = (px - cc) / cz * 2.0;
+  p.y = -p.y;
+  p = floor(p * vec2(-4.0, 4.0) + 2.5);
+  float bit = 0.0;
+  if (p.x >= 0.0 && p.x <= 4.0 && p.y >= 0.0 && p.y <= 4.0) {
+    int a = int(round(p.x + 5.0 * p.y));
+    bit = float((n >> a) & 1);
+  }
+  if (FXP == 0) return mix(INK, col * 1.2, bit);
+  return FXP == 1 ? vec3(bit) : mix(INK, PAPER, bit);
+}
+`,
+ crt:`// CRT: edit freely; changes apply live (⌘↵ to force).
+// Your version is used for every image and for export.
+//   g    position in the frame, 0–1    px  output pixel
+//   s    Scale, in pixels              look(uv)  the edited image
+//   FXD  Curvature  FXL Levels  FXP Palette (0 colour, 1 mono, 2 duotone)
+//   INK, PAPER duotone colours   LW luminance weights
+//   h12(p) hash 0–1   rot(a) 2D rotation   grad(uv,e) luminance gradient
+vec3 effect(vec2 g, vec2 px, float s) {
+  vec2 q = g - 0.5;
+  q *= 1.0 + FXD * 0.45 * dot(q, q);    // barrel distortion
+  vec2 g2 = q + 0.5;
+  if (g2.x < 0.0 || g2.y < 0.0 || g2.x > 1.0 || g2.y > 1.0)
+    return vec3(0.0);
+  float ca = s * 0.35 / OUT.x;          // RGB convergence error
+  vec3 col = vec3(look(g2 + vec2(ca, 0.0)).r,
+                  look(g2).g,
+                  look(g2 - vec2(ca, 0.0)).b);
+  vec2 p2 = g2 * OUT;
+  col *= 0.7 + 0.3 * (0.5 + 0.5 * cos(6.2832 * p2.y / s)); // scanlines
+  vec3 m = vec3(0.78);                  // aperture grille
+  int tri = int(mod(floor(p2.x / max(1.0, s / 3.0)), 3.0));
+  m[tri] = 1.15;
+  col *= m;
+  vec2 ev = g2 * (1.0 - g2);            // vignette
+  return col * 1.12 * pow(clamp(ev.x * ev.y * 16.0, 0.0, 1.0), 0.12 + 0.25 * FXD);
+}
+`
+};
+// Shader = FS0 with the effect functions spliced in at %%FX%%. Each effect is written as
+// `vec3 effect(vec2 g, vec2 px, float s)`; `effect` is renamed per effect when assembling.
+const FXCODE=(()=>{try{return JSON.parse(localStorage.getItem('filmlab.fxcode')||'{}')}catch(e){return{}}})();
+const fxCode=id=>FXCODE[id]??FXSRC[id];
+function buildFS(over){
+ const ids=FXLIST.slice(1).map(f=>f[0]),at={};let body='';
+ const pre=FS0.slice(0,FS0.indexOf('%%FX%%'));let line=pre.split('\n').length;
+ for(const id of ids){const code=(over&&id in over?over[id]:fxCode(id)).replace(/\beffect\b/g,'fx_'+id)+'\n';at[id]=line;line+=code.split('\n').length-1;body+=code}
+ body+='vec3 fx(vec2 g){\n vec2 px=g*OUT;float s=max(FXS*max(OUT.x,OUT.y)/1000.,1.);\n'+ids.map((id,n)=>` if(FX==${n+1})return fx_${id}(g,px,s);`).join('\n')+'\n return look(g);\n}\n';
+ return{src:FS0.replace('%%FX%%',body),at};
+}
 let prog,vao,U={},fbo=null,ftex=null,TILE=2048;
+const UNAMES='T S OS OUT M C TL PXS ANG BYP INV MONO BASE ILO IHI NBLK NWHT NMID NDR SHC HIC EXP CON HIL SHA FADE TEMP TINT SAT VIB SHT HIT GRA GSZ HAL HALR VIG FX FXP INK PAPER FXA FXS FXD FXL'.split(' ');
+function makeProgram(fs){
+ const sh=(t,src)=>{const x=gl.createShader(t);gl.shaderSource(x,src);gl.compileShader(x);if(!gl.getShaderParameter(x,gl.COMPILE_STATUS)){const m=gl.getShaderInfoLog(x);gl.deleteShader(x);throw new Error(m)}return x};
+ const vs=sh(gl.VERTEX_SHADER,VS),f=sh(gl.FRAGMENT_SHADER,fs),pr=gl.createProgram();gl.attachShader(pr,vs);gl.attachShader(pr,f);
+ gl.bindAttribLocation(pr,0,'p');gl.linkProgram(pr);gl.deleteShader(vs);gl.deleteShader(f);
+ if(!gl.getProgramParameter(pr,gl.LINK_STATUS)){const m=gl.getProgramInfoLog(pr);gl.deleteProgram(pr);throw new Error(m)}
+ return pr;
+}
+function useProgram(pr){if(prog&&prog!==pr)gl.deleteProgram(prog);prog=pr;U={};UNAMES.forEach(n=>U[n]=gl.getUniformLocation(prog,n))}
+// Recompile with one effect's code replaced. On error the last good program keeps rendering.
+function compileFx(id,code){
+ const b=buildFS({[id]:code});
+ try{useProgram(makeProgram(b.src));return{ok:true}}
+ catch(e){const errs=[];for(const ln of String(e.message).split('\n')){const m=ln.match(/ERROR:\s*\d+:(\d+):\s*(.*)/);if(m)errs.push({line:+m[1]-b.at[id]+1,msg:m[2].trim()})}
+  return{ok:false,errs:errs.length?errs:[{line:0,msg:String(e.message).trim()}]}}
+}
 function initGL(){
- const sh=(t,s)=>{const x=gl.createShader(t);gl.shaderSource(x,s);gl.compileShader(x);if(!gl.getShaderParameter(x,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(x));return x};
- prog=gl.createProgram();gl.attachShader(prog,sh(gl.VERTEX_SHADER,VS));gl.attachShader(prog,sh(gl.FRAGMENT_SHADER,FS));
- gl.bindAttribLocation(prog,0,'p');gl.linkProgram(prog);
- if(!gl.getProgramParameter(prog,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(prog));
+ let pr;try{pr=makeProgram(buildFS().src)}catch(e){console.error(e);for(const k in FXCODE)delete FXCODE[k];pr=makeProgram(buildFS().src);setTimeout(()=>toast('Your edited effect code failed to compile and was reset',4000),400)}
+ useProgram(pr);
  vao=gl.createVertexArray();gl.bindVertexArray(vao);
  const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);
  gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,2,gl.FLOAT,false,0,0);
- 'T S OS OUT M C TL PXS ANG BYP INV MONO BASE ILO IHI NBLK NWHT NMID NDR SHC HIC EXP CON HIL SHA FADE TEMP TINT SAT VIB SHT HIT GRA GSZ HAL HALR VIG FX FXP INK PAPER FXA FXS FXD FXL'.split(' ').forEach(n=>U[n]=gl.getUniformLocation(prog,n));
  TILE=Math.min(2048,gl.getParameter(gl.MAX_RENDERBUFFER_SIZE),gl.getParameter(gl.MAX_TEXTURE_SIZE));
 }
 const hex=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16)/255);
@@ -949,6 +1217,7 @@ function buildPanel(){
  {const w=el('div','ctl'),sel=el('select');[['0','Color'],['1','Mono'],['2','Duotone (ink / paper)']].forEach(([v,t])=>{const o=el('option');o.value=v;o.textContent=t;sel.append(o)});
   sel.onchange=()=>{P.fxp=+sel.value;syncFx();dirty();commit()};w.append(sel);FXR.p=row(s,'Palette',w);B.fxp=v=>sel.value=String(v)}
  FXR.ink=color(s,'ink','Ink');FXR.paper=color(s,'paper','Paper');
+ buildCodeEditor(s);
  s=section('Export');
  {const g=el('div','chips');g.id='fmtChips';
   FORMATS.forEach(([v,t])=>{const b=btn(t,()=>{if(X.formats.has(v)){if(X.formats.size>1)X.formats.delete(v)}else X.formats.add(v);updExport()});b.dataset.f=v;b.title='Toggle '+t;g.append(b)});
@@ -1016,7 +1285,57 @@ function syncAdv(){
 }
 function syncHint(){const h=$('#negHint'),it=items[cur];if(h)h.classList.toggle('on',!!(img&&it&&it.neg&&!it.negNo&&P.film==='none'))}
 function applyFx(id){P.fx=id;const c=FXCFG[id];if(c.s)P.fxs=c.s;if('dv' in c)P.fxd=c.dv;sync();dirty();commit();if(img&&id!=='none')toast(FXLIST[FXIDX[id]][1],1000)}
-function syncFx(){const c=FXCFG[P.fx]||{},on=P.fx!=='none',show=(r,v)=>{if(r)r.style.display=v?'':'none'};
+/* ---------------- effect code editor ---------------- */
+let codeOn=false,ceT=0;
+const GLKW=/\b(if|else|for|return|break|continue|const|in|out|uniform|true|false)\b/,GLTY=/\b(void|bool|int|float|vec[234]|ivec[234]|mat[234])\b/;
+const GLFN=new Set('look lum mix clamp floor fract dot length smoothstep step sqrt pow exp exp2 log log2 sin cos tan atan abs max min mod round sign normalize texture textureLod h12 vn rot grad bayer8 ign'.split(' '));
+const GLU=new Set('FXD FXL FXP FXS FXA INK PAPER OUT LW S'.split(' '));
+function glHL(src){
+ const e=t=>t.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+ return src.split('\n').map(line=>{const ci=line.indexOf('//'),code=ci<0?line:line.slice(0,ci),com=ci<0?'':line.slice(ci);
+  const out=code.replace(/(\d+\.?\d*(?:e-?\d+)?|\.\d+)|([A-Za-z_]\w*)|([^\w]+)/g,(m,num,id,other)=>{
+   if(num)return'<i class="n">'+num+'</i>';
+   if(id){if(GLTY.test(id))return'<i class="t">'+id+'</i>';if(GLKW.test(id))return'<i class="k">'+id+'</i>';if(GLFN.has(id))return'<i class="f">'+id+'</i>';if(GLU.has(id))return'<i class="u">'+id+'</i>';return id}
+   return e(other)});
+  return out+(com?'<i class="c">'+e(com)+'</i>':'')}).join('\n')+'\n';
+}
+function buildCodeEditor(par){
+ {const w=el('div','ctl'),c=el('input');c.type='checkbox';c.id='codeT';c.onchange=()=>{codeOn=c.checked;syncCode()};w.append(c);row(par,'Code editor',w).id='codeRow'}
+ const box=el('div','ced');box.id='ced';
+ box.innerHTML='<div class="ced-h"><span class="ced-f"></span><span class="ced-st"></span><button class="b" data-a="copy">Copy</button><button class="b" data-a="reset">Reset</button></div>'+
+  '<div class="ced-b"><div class="ced-g" aria-hidden="true"></div><div class="ced-s"><pre class="ced-p" aria-hidden="true"></pre><textarea spellcheck="false" wrap="off" autocapitalize="off" autocomplete="off" aria-label="Effect shader code (GLSL)"></textarea></div></div>'+
+  '<div class="ced-m" role="status"></div><div class="ced-none">Pick an effect above to see its code.</div>';
+ par.append(box);
+ const ta=box.querySelector('textarea'),pre=box.querySelector('.ced-p'),gut=box.querySelector('.ced-g');
+ const paint=()=>{pre.innerHTML=glHL(ta.value);const n=ta.value.split('\n').length;gut.innerHTML=Array.from({length:n},(_,i)=>`<span>${i+1}</span>`).join('');syncScroll()};
+ const syncScroll=()=>{pre.style.transform=`translate(${-ta.scrollLeft}px,${-ta.scrollTop}px)`;gut.style.transform=`translateY(${-ta.scrollTop}px)`};
+ ta.addEventListener('scroll',syncScroll);
+ ta.addEventListener('input',()=>{paint();clearTimeout(ceT);ceT=setTimeout(applyCode,450)});
+ ta.addEventListener('keydown',e=>{
+  if(e.key==='Tab'){e.preventDefault();const a=ta.selectionStart,b=ta.selectionEnd;ta.setRangeText('  ',a,b,'end');ta.dispatchEvent(new Event('input'))}
+  else if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)){e.preventDefault();clearTimeout(ceT);applyCode()}
+  e.stopPropagation()});
+ box.querySelector('[data-a=copy]').onclick=async()=>{try{await navigator.clipboard.writeText(ta.value)}catch(e){ta.select();document.execCommand('copy')}toast('Code copied',1200)};
+ box.querySelector('[data-a=reset]').onclick=()=>{const id=P.fx;if(!FXSRC[id])return;delete FXCODE[id];saveFxCode();ta.value=FXSRC[id];paint();applyCode();toast('Restored the original '+FXLIST[FXIDX[id]][1],1400)};
+ box._paint=paint;box._ta=ta;
+}
+function saveFxCode(){try{localStorage.setItem('filmlab.fxcode',JSON.stringify(FXCODE))}catch(e){}}
+function applyCode(){
+ const box=$('#ced'),id=P.fx;if(!box||!FXSRC[id])return;const code=box._ta.value,r=compileFx(id,code),m=box.querySelector('.ced-m');
+ if(r.ok){if(code===FXSRC[id])delete FXCODE[id];else FXCODE[id]=code;saveFxCode();m.className='ced-m ok';m.textContent='Compiled · applied';dirty()}
+ else{m.className='ced-m err';m.innerHTML=r.errs.slice(0,4).map(x=>`<div>${x.line>0?'<b>Line '+x.line+'</b> ':''}${x.msg.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</div>`).join('')}
+ syncCodeState();
+}
+function syncCodeState(){const box=$('#ced');if(!box)return;const id=P.fx,ed=id in FXCODE;box.querySelector('.ced-st').textContent=ed?'edited':'';box.querySelector('[data-a=reset]').disabled=!ed;
+ document.querySelectorAll('#fxChips .b').forEach(b=>b.classList.toggle('mod',b.dataset.fx in FXCODE))}
+function syncCode(){
+ const box=$('#ced'),row=$('#codeRow');if(!box)return;const on=P.fx!=='none';
+ box.style.display=codeOn?'':'none';box.classList.toggle('empty',!on);
+ if(codeOn&&on&&box.dataset.fx!==P.fx){box.dataset.fx=P.fx;box.querySelector('.ced-f').textContent=P.fx+'.glsl';box._ta.value=fxCode(P.fx);box._ta.scrollTop=box._ta.scrollLeft=0;box._paint();const m=box.querySelector('.ced-m');m.className='ced-m';m.textContent=''}
+ if(!on)box.dataset.fx='';
+ syncCodeState();
+}
+function syncFx(){syncCode();const c=FXCFG[P.fx]||{},on=P.fx!=='none',show=(r,v)=>{if(r)r.style.display=v?'':'none'};
  document.querySelectorAll('#fxChips .b').forEach(b=>b.classList.toggle('on',b.dataset.fx===P.fx));
  show(FXR.amt,on);show(FXR.s,on);show(FXR.d,on&&!!c.d);if(c.d)FXR.d.querySelector('label').textContent=c.d;show(FXR.l,on&&!!c.l);show(FXR.p,on&&!!c.p);
  const duo=+P.fxp===2&&!!c.p;show(FXR.ink,on&&(c.ink||duo));show(FXR.paper,on&&(duo||(c.ink&&P.fx==='ink')));}
@@ -1380,7 +1699,7 @@ addEventListener('paste',e=>{const it=[...(e.clipboardData?.items||[])].find(i=>
 let zHeld=false;
 addEventListener('keydown',e=>{
  if(rollOpen){if(e.key==='Escape'){e.preventDefault();closeRoll()}return}
- const t=e.target,typing=(t.tagName==='INPUT'&&(t.type==='text'||t.type==='number'))||t.tagName==='SELECT',mod=e.metaKey||e.ctrlKey,k=e.key.toLowerCase();
+ const t=e.target,typing=(t.tagName==='INPUT'&&(t.type==='text'||t.type==='number'))||t.tagName==='SELECT'||t.tagName==='TEXTAREA',mod=e.metaKey||e.ctrlKey,k=e.key.toLowerCase();
  if(mod&&k==='o'){e.preventDefault();fF.click();return}
  if(mod&&k==='e'){e.preventDefault();exportRun();return}
  if(mod&&k==='z'){if(typing)return;e.preventDefault();e.shiftKey?redo():undo();return}
