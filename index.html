@@ -283,7 +283,8 @@ const GDEF={M:[1,0,0,1],crop:[0,0,1,1],aspect:'free'};
 const FILMS=[['none','Off'],['color','Colour'],['bw','B&W']];
 let P=structuredClone(DEF),G=structuredClone(GDEF);
 const X={formats:new Set(['jpeg']),quality:.92,size:'1',scope:'current'};
-const FORMATS=[['jpeg','JPEG'],['png','PNG'],['webp','WebP'],['avif','AVIF'],['tiff','TIFF'],['bmp','BMP']];
+const FORMATS=[['jpeg','JPEG'],['png','PNG'],['webp','WebP'],['avif','AVIF'],['tiff','TIFF'],['bmp','BMP'],['html','HTML'],['react','React']];
+const FMTNAME=Object.fromEntries(FORMATS);
 const UNSUP=new Set();
 const PRESETS={
  'None':{},
@@ -920,8 +921,45 @@ stage.addEventListener('pointerleave',()=>{lp.classList.remove('on')});
 
 /* ---------------- export ---------------- */
 const HOSTED=!!(window.claude&&typeof window.claude.use==='function');let DL=null;
-const EXT={jpeg:'jpg',png:'png',webp:'webp',avif:'avif',tiff:'tif',bmp:'bmp'};
+const EXT={jpeg:'jpg',png:'png',webp:'webp',avif:'avif',tiff:'tif',bmp:'bmp',html:'html',react:'jsx'};
 const fmtBytes=b=>b>1048576?(b/1048576).toFixed(1)+' MB':Math.round(b/1024)+' KB';
+// HTML / React: the rendered image embedded as a data URI (WebP where the browser can encode it, else JPEG).
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
+const pascal=t=>(String(t).replace(/[^A-Za-z0-9]+(.)?/g,(_,c)=>c?c.toUpperCase():'').replace(/^./,c=>c.toUpperCase()).replace(/^(?=\d)/,'Photo'))||'Photo';
+async function encodeCode(rgba,W,H,f,name){
+ const blob=await encode(rgba,W,H,UNSUP.has('webp')?'jpeg':'webp');
+ const uri=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=()=>rej(r.error);r.readAsDataURL(blob)});
+ const t=f==='html'?`<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${esc(name)}</title>
+<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0a0a0a}img{display:block;max-width:100%;max-height:100vh;width:auto;height:auto}</style>
+</head>
+<body>
+<!-- Exported from Film Lab · ${W}×${H} · edits baked in -->
+<img src="${uri}" width="${W}" height="${H}" alt="${esc(name)}">
+</body>
+</html>
+`:`// Exported from Film Lab · ${W}×${H} · edits baked in
+const src = "${uri}";
+
+export default function ${pascal(name)}({ alt = ${JSON.stringify(name)}, style, ...props }) {
+  return (
+    <img
+      src={src}
+      width={${W}}
+      height={${H}}
+      alt={alt}
+      style={{ maxWidth: "100%", height: "auto", ...style }}
+      {...props}
+    />
+  );
+}
+`;
+ return new Blob([t],{type:f==='html'?'text/html':'text/javascript'});
+}
 async function encode(rgba,W,H,f){
  if(f==='tiff')return encodeTIFF(rgba,W,H);if(f==='bmp')return encodeBMP(rgba,W,H);
  const c=el('canvas');c.width=W;c.height=H;c.getContext('2d').putImageData(new ImageData(rgba,W,H),0,0);
@@ -942,7 +980,7 @@ async function saveBlob(blob,fname){
  return true;
 }
 function setBusy(on,label){busy=on;['#bExp','#bExp2','#bUpFiles','#bUpDir','#bSync','#bClear','#bSample'].forEach(q=>{const b=$(q);if(b)b.disabled=on});if(on&&label)$('#bExp2').textContent=label;if(!on){updExport();dirty()}}
-const LOSSY=new Set(['jpeg','webp','avif']),DIRECT=new Set(['jpeg','png','webp']);
+const LOSSY=new Set(['jpeg','webp','avif','html','react']),DIRECT=new Set(['jpeg','png','webp']);
 const fmtList=()=>FORMATS.map(f=>f[0]).filter(f=>X.formats.has(f)&&!UNSUP.has(f));
 function toggleSel(it){it.sel=!it.sel;updThumb(it);if(it.sel&&X.scope==='current')X.scope='sel';if(!items.some(x=>x.sel)&&X.scope==='sel')X.scope='current';updExport()}
 function exportTargets(){
@@ -963,7 +1001,7 @@ function updExport(){
  if(!img){oi.textContent='—';if(!busy)eb.textContent='Export image';return}
  const d=outDims();
  oi.textContent=pl.idx.length>1?`${pl.idx.length} images × ${pl.f.length} format${pl.f.length>1?'s':''}${pl.zip?' · .zip':''}`:`${d.W} × ${d.H} px${pl.f.length>1?` · ${pl.f.length} formats`:''}${pl.zip?' · .zip':''}`;
- if(!busy)eb.textContent=!pl.f.length?'Pick a format':pl.files===1&&!pl.zip?`Export ${pl.f[0]==='jpeg'?'JPEG':pl.f[0].toUpperCase()}`:`Export ${pl.files} file${pl.files>1?'s':''} as .zip`;
+ if(!busy)eb.textContent=!pl.f.length?'Pick a format':pl.files===1&&!pl.zip?`Export ${FMTNAME[pl.f[0]]}`:`Export ${pl.files} file${pl.files>1?'s':''} as .zip`;
  eb.disabled=busy||!pl.f.length;
 }
 async function exportRun(){
@@ -982,7 +1020,7 @@ async function exportRun(){
     let base=single?($('#nameInp').value.trim()||it.name+'_edit'):it.name+'_edit',k=2;
     if(!single){while(used.has(base))base=it.name+'_edit_'+k++;used.add(base)}
     if(n===0)zname=base;
-    for(const f of fmts){const blob=await encode(rgba,W,H,f),ext=EXT[f];out.push({name:(idx.length>1&&fmts.length>1?ext+'/':'')+base+'.'+ext,blob})}
+    for(const f of fmts){const blob=f==='html'||f==='react'?await encodeCode(rgba,W,H,f,base):await encode(rgba,W,H,f),ext=EXT[f];out.push({name:(idx.length>1&&fmts.length>1?ext+'/':'')+base+'.'+ext,blob})}
    }catch(e){console.error(e);failed.push(it.file.name+(e.message?' ('+e.message+')':''))}
   }
   if(!out.length)throw new Error(failed[0]||'nothing was exported');
