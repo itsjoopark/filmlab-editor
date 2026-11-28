@@ -718,14 +718,27 @@ async function select(i){
  analyze();sync();layout();if(!hist.length)commit(true);else updUndo();
  toast(down?`Downscaled to ${SW}×${SH} (GPU limit)`:'',down?3500:0);
 }
+// Removed images go to a small trash so ⌘Z / Undo can bring them back (with their edits and history).
+// Undo restores a removal only if nothing was edited after it; otherwise it undoes the edit as usual.
+const trash=[];let actSeq=0,editSeq=0;
+const nm=it=>it.file.name;
+function trashPush(e){e.at=++actSeq;trash.push(e);if(trash.length>20)trash.shift();updUndo()}
+function canRestore(){const t=trash[trash.length-1];return!!t&&t.at>editSeq}
+function restoreRemoved(){
+ const t=trash.pop();if(!t||busy)return;
+ if(t.all){items=t.all;cur=-1;img=false;renderStrip();select(clamp(t.cur,0,items.length-1));toast(`Restored ${items.length} image${items.length>1?'s':''}`,1800)}
+ else{const i=Math.min(t.i,items.length);items.splice(i,0,t.it);if(cur>=i)cur++;renderStrip();if(t.wasCur||!img)select(i);else markStrip();toast('Restored '+nm(t.it),1600)}
+ updUndo();
+}
 function removeItem(i){
- if(busy)return;const wasCur=i===cur;if(wasCur){selToken++}
+ if(busy)return;const wasCur=i===cur;if(wasCur){stash();selToken++}
+ const it=items[i];trashPush({it,i,wasCur});toast(`Removed ${nm(it)} · ⌘Z to undo`,2600);
  items.splice(i,1);
  if(i<cur)cur--;
  if(wasCur){cur=-1;img=false;if(items.length)select(Math.min(i,items.length-1));else clearView()}
  renderStrip();
 }
-function clearAll(){if(busy)return;selToken++;items=[];cur=-1;img=false;clearView();renderStrip()}
+function clearAll(){if(busy||!items.length)return;stash();trashPush({all:items,cur});toast(`Removed ${items.length} image${items.length>1?'s':''} · ⌘Z to undo`,2600);selToken++;items=[];cur=-1;img=false;clearView();renderStrip()}
 function clearView(){view.classList.remove('on');$('#empty').style.display='';$('#amb').classList.remove('on');if(cropMode){cropMode=false;ov.classList.remove('on');cropBtn()}hist=[];hi=-1;updUndo();
  $('#fileInfo').textContent='—';hx.clearRect(0,0,hc.width,hc.height);syncHint();status()}
 function renderStrip(){
@@ -1018,10 +1031,10 @@ function status(){
 /* ---------------- history ---------------- */
 let hist=[],hi=-1;
 const snap=()=>JSON.stringify({P,G});
-function commit(reset){const s=snap();if(reset){hist=[s];hi=0}else{if(!img||hist[hi]===s)return;hist=hist.slice(0,hi+1);hist.push(s);if(hist.length>200)hist.shift();hi=hist.length-1;const it=items[cur];if(it&&!it.edited){it.edited=true;updThumb(it)}}updUndo()}
+function commit(reset){const s=snap();if(reset){hist=[s];hi=0}else{if(!img||hist[hi]===s)return;editSeq=++actSeq;hist=hist.slice(0,hi+1);hist.push(s);if(hist.length>200)hist.shift();hi=hist.length-1;const it=items[cur];if(it&&!it.edited){it.edited=true;updThumb(it)}}updUndo()}
 function restore(i){if(i<0||i>=hist.length)return;if(cropMode){cropMode=false;ov.classList.remove('on');cropBtn()}hi=i;const o=JSON.parse(hist[i]);P=o.P;G=o.G;analyze();sync();layout();updUndo()}
-const undo=()=>restore(hi-1),redo=()=>restore(hi+1);
-function updUndo(){$('#bUndo').disabled=hi<=0;$('#bRedo').disabled=hi>=hist.length-1}
+const undo=()=>canRestore()||(hi<=0&&trash.length)?restoreRemoved():restore(hi-1),redo=()=>restore(hi+1);
+function updUndo(){$('#bUndo').disabled=hi<=0&&!trash.length;$('#bRedo').disabled=hi>=hist.length-1}
 
 /* ---------------- base picker ---------------- */
 function startPick(){if(!img)return;picking=!picking;stage.classList.toggle('pick',picking);$('#bPick').classList.toggle('on',picking);if(picking)toast('Tap the film rebate — the clear edge between frames',3500)}
