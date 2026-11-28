@@ -684,9 +684,16 @@ function addFiles(list){
  toast(files.length===1?'Added '+files[0].name:`Added ${files.length} images`,1800);
  if(cur<0||!img)select(first);
 }
+// Dropped folders. Chrome/Edge: File System Access handles (these also work when the app is opened from a
+// local file, where the older entries API fails with EncodingError). Elsewhere: webkitGetAsEntry entries.
+const withPath=(f,path)=>{try{Object.defineProperty(f,'webkitRelativePath',{value:path})}catch(e){}return f};
+async function handleFiles(h,out,pre=''){
+ if(h.kind==='file'){out.push(withPath(await h.getFile(),pre+h.name));return}
+ for await(const c of h.values())await handleFiles(c,out,pre+h.name+'/');
+}
 async function entryFiles(entry,out){
- if(entry.isFile){await new Promise(r=>entry.file(f=>{out.push(f);r()},()=>r()))}
- else if(entry.isDirectory){const rd=entry.createReader();let batch;do{batch=await new Promise(r=>rd.readEntries(r,()=>r([])));for(const e of batch)await entryFiles(e,out)}while(batch.length)}
+ if(entry.isFile){out.push(await new Promise((r,j)=>entry.file(r,j)))}
+ else if(entry.isDirectory){const rd=entry.createReader();let batch;do{batch=await new Promise((r,j)=>rd.readEntries(r,j));for(const e of batch)await entryFiles(e,out)}while(batch.length)}
 }
 function stash(){
  const it=items[cur];if(!it||!img)return;
@@ -1331,9 +1338,23 @@ addEventListener('dragleave',e=>{e.preventDefault();if(--dragN<=0){dragN=0;stage
 addEventListener('drop',async e=>{
  e.preventDefault();dragN=0;stage.classList.remove('drag');closeRoll();if(busy)return;
  const dt=e.dataTransfer;if(!dt)return;
- const entries=[...(dt.items||[])].map(i=>i.webkitGetAsEntry&&i.webkitGetAsEntry()).filter(Boolean);
- if(entries.length){const out=[];toast('Reading files…',60000);for(const en of entries)await entryFiles(en,out);addFiles(out)}
- else addFiles(dt.files||[]);
+ // everything on the DataTransfer must be read synchronously, before the first await
+ const its=[...(dt.items||[])].filter(i=>i.kind==='file'),flat=[...(dt.files||[])];
+ const handles=its.map(i=>i.getAsFileSystemHandle?i.getAsFileSystemHandle():null);
+ const entries=its.map(i=>i.webkitGetAsEntry?i.webkitGetAsEntry():null);
+ const hasDir=entries.some(en=>en&&en.isDirectory);
+ if(!hasDir){addFiles(flat);return}
+ toast('Reading folder…',60000);const out=[];
+ try{
+  if(handles.every(Boolean)){for(const h of await Promise.all(handles))if(h)await handleFiles(h,out)}
+  else for(const en of entries)if(en)await entryFiles(en,out);
+ }catch(err){
+  console.error(err);out.length=0;
+  // last resort: the other API
+  try{for(const en of entries)if(en)await entryFiles(en,out)}catch(e2){console.error(e2)}
+ }
+ if(out.length)addFiles(out);
+ else{toast('Couldn’t read that folder here — use Upload folder, or select the images',4500);sound('error')}
 });
 addEventListener('paste',e=>{const it=[...(e.clipboardData?.items||[])].find(i=>i.type.startsWith('image/'));if(it){const f=it.getAsFile();addFiles([new File([f],'pasted.'+(f.type.split('/')[1]||'png'),{type:f.type})])}});
 let zHeld=false;
