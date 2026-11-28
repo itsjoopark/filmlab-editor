@@ -177,6 +177,31 @@ header .b{border:0}
 .loupe{position:fixed;width:200px;height:200px;border:1px solid rgba(255,255,255,.35);border-radius:10px;pointer-events:none;display:none;z-index:30;box-shadow:0 10px 30px rgba(0,0,0,.5);background:#000}
 .loupe.on{display:block}
 .err{color:#ff7a7a}
+.scrim{position:fixed;inset:0;z-index:40;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.45);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);opacity:0;transition:opacity 150ms var(--ease-out)}
+.scrim.on{display:flex;opacity:1;transition-duration:200ms}
+@starting-style{.scrim.on{opacity:0}}
+.sheet{width:100%;max-width:440px;border-radius:18px;padding:18px 18px 16px;background:rgba(24,24,24,.86);color:var(--text);transform:scale(.97) translateY(6px);transition:transform 150ms var(--ease-out)}
+.scrim.on .sheet{transform:none;transition-duration:220ms}
+@starting-style{.scrim.on .sheet{transform:scale(.97) translateY(6px)}}
+.sheet-h{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.sheet-h h2{flex:1;margin:0;font-size:15px;font-weight:500;color:#fff;letter-spacing:-.005em}
+.sheet-x{width:28px;height:28px;padding:0;border-radius:50%;background:rgba(255,255,255,.06)}
+.sheet-p{margin:0 0 14px;color:var(--lab);line-height:1.5}
+.dz{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;height:172px;border-radius:14px;border:1.5px dashed rgba(255,255,255,.16);background:rgba(255,255,255,.025);text-align:center;cursor:pointer;transition:border-color 150ms ease,background-color 150ms ease}
+.dz svg{color:var(--dim);margin-bottom:4px;transition:transform 200ms var(--ease-out),color 150ms ease}
+.dz .t1{color:#fff;font-weight:500;font-size:13px}.dz .t2{color:var(--dim)}
+@media (hover:hover) and (pointer:fine){.dz:hover{border-color:rgba(255,255,255,.28);background:rgba(255,255,255,.04)}}
+.dz.over{border-color:var(--acc);background:rgba(91,147,255,.1)}
+.dz.over svg{color:var(--acc);transform:translateY(-3px)}
+.dz:focus-visible{outline:none;border-color:var(--acc)}
+.sheet-f{display:flex;align-items:center;gap:8px;margin-top:14px}
+.sheet-f .note{flex:1;color:var(--dim);font-size:11px}
+.sheet-f .b{height:32px;padding:0 14px}
+.sheet .b:focus{outline:none}.sheet .b:focus-visible{box-shadow:0 0 0 2px rgba(10,10,10,.9),0 0 0 4px rgba(91,147,255,.7)}
+.sheet .b.ghost{background:none;border-color:transparent;color:var(--lab)}
+@media (hover:hover) and (pointer:fine){.sheet .b.ghost:hover{color:#fff;background:rgba(255,255,255,.06)}}
+@media (max-width:860px){.scrim{align-items:flex-end;padding:0}.sheet{max-width:none;border-radius:20px 20px 0 0;padding-bottom:calc(18px + env(safe-area-inset-bottom));transform:translateY(24px)}@starting-style{.scrim.on .sheet{transform:translateY(24px)}}.dz{height:140px}}
+@media (prefers-reduced-motion:reduce){.sheet,.scrim.on .sheet{transform:none}@starting-style{.scrim.on .sheet{transform:none}}.dz.over svg{transform:none}}
 @media (prefers-reduced-motion:reduce){.b:active:not(:disabled),.th:active{transform:none}.toast,.toast.on{transform:translate(-50%,0)}.strip.on{transition:opacity 200ms ease}@starting-style{.strip.on{transform:none}}.sec-h .car{transition:none}.hint.on{transition:opacity 200ms ease}@starting-style{.hint.on{transform:none}}}
 @media (max-width:860px){
  html,body{height:100%}body{padding:0}
@@ -227,7 +252,7 @@ header .b{border:0}
   <div class="sep"></div>
   <div class="grp">
    <button class="b up" id="bUpFiles" title="Upload images (⌘O)"><span class="ic">↑</span>Upload<span class="lg">&nbsp;images</span></button>
-   <button class="b" id="bUpDir" title="Upload a whole folder"><span class="ic">▤</span>Upload folder</button>
+   <button class="b" id="bUpDir" title="Add a folder of scans"><span class="ic">▤</span>Upload folder</button>
    <button class="b" id="bSample" title="Load the sample photo"><span class="ic">◐</span>Sample</button>
   </div>
   <div class="hr">
@@ -272,6 +297,17 @@ header .b{border:0}
  </main>
 </div>
 <canvas class="loupe" id="loupe"></canvas>
+<div class="scrim" id="rollScrim" aria-hidden="true">
+ <div class="sheet glass" role="dialog" aria-modal="true" aria-labelledby="rollTtl">
+  <div class="sheet-h"><h2 id="rollTtl">Add a roll</h2><button class="b sheet-x" id="rollX" aria-label="Close">×</button></div>
+  <p class="sheet-p">Drop a folder of scans and every image inside is added, in frame order. Nothing leaves your computer.</p>
+  <div class="dz" id="rollDz" tabindex="0" role="button" aria-label="Drop a folder here, or choose images">
+   <svg width="34" height="28" viewBox="0 0 34 28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M2 6a3 3 0 0 1 3-3h7l3 3h14a3 3 0 0 1 3 3v14a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3z"/><path d="M17 11v9m-4-4 4 4 4-4" stroke-linecap="round"/></svg>
+   <div class="t1">Drop a folder here</div><div class="t2">or click to choose the images inside it</div>
+  </div>
+  <div class="sheet-f"><button class="b ghost" id="rollDir" title="Your browser will ask you to confirm">Choose folder…</button><span class="note"></span><button class="b acc" id="rollImgs">Choose images</button></div>
+ </div>
+</div>
 <input type="file" id="fFiles" accept="image/*,.tif,.tiff" multiple hidden>
 <input type="file" id="fDir" webkitdirectory directory multiple hidden>
 
@@ -1245,7 +1281,17 @@ let tT=0;function toast(m,ms=2000){const t=$('#toast');clearTimeout(tT);if(!m){t
 function setCompare(on){if(!img)return;comparing=on;$('#badge').classList.toggle('on',on);$('#bCmp').classList.toggle('on',on);dirty()}
 const fF=$('#fFiles'),fD=$('#fDir');
 fF.onchange=()=>{addFiles(fF.files);fF.value=''};fD.onchange=()=>{addFiles(fD.files);fD.value=''};
-$('#bUpFiles').onclick=()=>fF.click();$('#bUpDir').onclick=()=>fD.click();
+$('#bUpFiles').onclick=()=>fF.click();$('#bUpDir').onclick=()=>openRoll();
+// "Add a roll" sheet: steers folder uploads to drag-and-drop or multi-select, which skip the browser's
+// "Upload N files to this site?" confirmation. Choose folder… still uses the folder picker (and its prompt).
+const rollS=$('#rollScrim'),rollDz=$('#rollDz');let rollOpen=false,rollRet=null;
+function openRoll(){if(busy||rollOpen)return;rollOpen=true;rollRet=document.activeElement;rollS.classList.add('on');rollS.setAttribute('aria-hidden','false');requestAnimationFrame(()=>$('#rollImgs').focus({preventScroll:true}))}
+function closeRoll(){if(!rollOpen)return;rollOpen=false;rollDz.classList.remove('over');rollS.classList.remove('on');rollS.setAttribute('aria-hidden','true');if(rollRet&&rollRet.focus)rollRet.focus({preventScroll:true})}
+$('#rollX').onclick=closeRoll;rollS.addEventListener('pointerdown',e=>{if(e.target===rollS)closeRoll()});
+$('#rollImgs').onclick=()=>{closeRoll();fF.click()};$('#rollDir').onclick=()=>{closeRoll();fD.click()};
+rollDz.onclick=()=>{closeRoll();fF.click()};rollDz.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();rollDz.click()}};
+rollS.addEventListener('keydown',e=>{if(e.key!=='Tab')return;const f=[...rollS.querySelectorAll('button,[tabindex="0"]')],i=f.indexOf(document.activeElement);
+ if(e.shiftKey&&i<=0){e.preventDefault();f[f.length-1].focus()}else if(!e.shiftKey&&i===f.length-1){e.preventDefault();f[0].focus()}});
 function dataURLBlob(u){const i=u.indexOf(','),bin=atob(u.slice(i+1)),a=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)a[k]=bin.charCodeAt(k);return new Blob([a],{type:u.slice(5,u.indexOf(';'))})}
 $('#bSample').onclick=()=>{if(busy)return;try{addFiles([new File([dataURLBlob(SAMPLE)],'pnw_pond.jpg',{type:'image/jpeg'})])}catch(e){console.error(e);toast('Could not load sample: '+e.message,4000);sound('error')}};
 $('#bSync').onclick=syncLookToAll;$('#bClear').onclick=clearAll;
@@ -1253,11 +1299,11 @@ $('#bExp').onclick=()=>exportRun();$('#bUndo').onclick=undo;$('#bRedo').onclick=
 $('#bLoupe').onclick=()=>setLoupe(!loupeOn);
 const cmp=$('#bCmp');cmp.onpointerdown=()=>setCompare(true);['pointerup','pointerleave','pointercancel'].forEach(ev=>cmp.addEventListener(ev,()=>comparing&&setCompare(false)));
 let dragN=0;
-addEventListener('dragenter',e=>{e.preventDefault();dragN++;stage.classList.add('drag')});
+addEventListener('dragenter',e=>{e.preventDefault();dragN++;if(rollOpen)rollDz.classList.add('over');else stage.classList.add('drag')});
 addEventListener('dragover',e=>e.preventDefault());
-addEventListener('dragleave',e=>{e.preventDefault();if(--dragN<=0){dragN=0;stage.classList.remove('drag')}});
+addEventListener('dragleave',e=>{e.preventDefault();if(--dragN<=0){dragN=0;stage.classList.remove('drag');rollDz.classList.remove('over')}});
 addEventListener('drop',async e=>{
- e.preventDefault();dragN=0;stage.classList.remove('drag');if(busy)return;
+ e.preventDefault();dragN=0;stage.classList.remove('drag');closeRoll();if(busy)return;
  const dt=e.dataTransfer;if(!dt)return;
  const entries=[...(dt.items||[])].map(i=>i.webkitGetAsEntry&&i.webkitGetAsEntry()).filter(Boolean);
  if(entries.length){const out=[];toast('Reading files…',60000);for(const en of entries)await entryFiles(en,out);addFiles(out)}
@@ -1266,6 +1312,7 @@ addEventListener('drop',async e=>{
 addEventListener('paste',e=>{const it=[...(e.clipboardData?.items||[])].find(i=>i.type.startsWith('image/'));if(it){const f=it.getAsFile();addFiles([new File([f],'pasted.'+(f.type.split('/')[1]||'png'),{type:f.type})])}});
 let zHeld=false;
 addEventListener('keydown',e=>{
+ if(rollOpen){if(e.key==='Escape'){e.preventDefault();closeRoll()}return}
  const t=e.target,typing=(t.tagName==='INPUT'&&(t.type==='text'||t.type==='number'))||t.tagName==='SELECT',mod=e.metaKey||e.ctrlKey,k=e.key.toLowerCase();
  if(mod&&k==='o'){e.preventDefault();fF.click();return}
  if(mod&&k==='e'){e.preventDefault();exportRun();return}
