@@ -318,11 +318,11 @@ header .b{border:0}
  <div class="sheet glass" role="dialog" aria-modal="true" aria-labelledby="rollTtl">
   <div class="sheet-h"><h2 id="rollTtl">Add a roll</h2><button class="b sheet-x" id="rollX" aria-label="Close">×</button></div>
   <p class="sheet-p">Drop a folder of scans and every image inside is added, in frame order. Nothing leaves your computer.</p>
-  <div class="dz" id="rollDz" tabindex="0" role="button" aria-label="Drop a folder here, or choose images">
+  <div class="dz" id="rollDz" tabindex="0" role="button" aria-label="Drop a folder here, or click to choose a folder">
    <svg width="34" height="28" viewBox="0 0 34 28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M2 6a3 3 0 0 1 3-3h7l3 3h14a3 3 0 0 1 3 3v14a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3z"/><path d="M17 11v9m-4-4 4 4 4-4" stroke-linecap="round"/></svg>
-   <div class="t1">Drop a folder here</div><div class="t2">or click to choose the images inside it</div>
+   <div class="t1">Drop a folder here</div><div class="t2">or click to choose one</div>
   </div>
-  <div class="sheet-f"><button class="b ghost" id="rollDir" title="Your browser will ask you to confirm">Choose folder…</button><span class="note"></span><button class="b acc" id="rollImgs">Choose images</button></div>
+  <div class="sheet-f"><span class="note">Dragging a folder in skips the browser’s confirmation.</span><button class="b" id="rollImgs">Choose images</button></div>
  </div>
 </div>
 <input type="file" id="fFiles" accept="image/*,.tif,.tiff" multiple hidden>
@@ -1310,11 +1310,12 @@ $('#bUpFiles').onclick=()=>fF.click();$('#bUpDir').onclick=()=>openRoll();
 // "Add a roll" sheet: steers folder uploads to drag-and-drop or multi-select, which skip the browser's
 // "Upload N files to this site?" confirmation. Choose folder… still uses the folder picker (and its prompt).
 const rollS=$('#rollScrim'),rollDz=$('#rollDz');let rollOpen=false,rollRet=null;
-function openRoll(){if(busy||rollOpen)return;rollOpen=true;rollRet=document.activeElement;rollS.classList.add('on');rollS.setAttribute('aria-hidden','false');requestAnimationFrame(()=>$('#rollImgs').focus({preventScroll:true}))}
+function openRoll(){if(busy||rollOpen)return;rollOpen=true;rollRet=document.activeElement;rollS.classList.add('on');rollS.setAttribute('aria-hidden','false');requestAnimationFrame(()=>rollDz.focus({preventScroll:true}))}
 function closeRoll(){if(!rollOpen)return;rollOpen=false;rollDz.classList.remove('over');rollS.classList.remove('on');rollS.setAttribute('aria-hidden','true');if(rollRet&&rollRet.focus)rollRet.focus({preventScroll:true})}
 $('#rollX').onclick=closeRoll;rollS.addEventListener('pointerdown',e=>{if(e.target===rollS)closeRoll()});
-$('#rollImgs').onclick=()=>{closeRoll();fF.click()};$('#rollDir').onclick=()=>{closeRoll();fD.click()};
-rollDz.onclick=()=>{closeRoll();fF.click()};rollDz.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();rollDz.click()}};
+$('#rollImgs').onclick=()=>{closeRoll();fF.click()};
+// clicking the folder target picks a folder (the browser confirms that path; dragging doesn't)
+rollDz.onclick=()=>{closeRoll();fD.click()};rollDz.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();rollDz.click()}};
 rollS.addEventListener('keydown',e=>{if(e.key!=='Tab')return;const f=[...rollS.querySelectorAll('button,[tabindex="0"]')],i=f.indexOf(document.activeElement);
  if(e.shiftKey&&i<=0){e.preventDefault();f[f.length-1].focus()}else if(!e.shiftKey&&i===f.length-1){e.preventDefault();f[0].focus()}});
 function dataURLBlob(u){const i=u.indexOf(','),bin=atob(u.slice(i+1)),a=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)a[k]=bin.charCodeAt(k);return new Blob([a],{type:u.slice(5,u.indexOf(';'))})}
