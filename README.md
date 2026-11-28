@@ -10,7 +10,8 @@ Open `index.html` in a recent Chrome, Edge, Safari or Firefox (WebGL2 required).
 
 ## Features
 
-- **Film scans** — invert colour negatives, auto-detect the orange film base or pick it from the rebate.
+- **Negatives** — colour and B&W negative inversion in density space, film base auto-detected from the rebate (or picked by hand), a prompt when an imported image looks like a negative, and one base and set of levels shared across a roll.
+- **Works on phones** — the editor adapts to small screens and touch.
 - **Light & colour** — exposure, contrast, highlights, shadows, fade, temperature, tint, saturation, vibrance, black & white, split toning.
 - **Film character** — resolution-aware grain, halation, vignette, and presets (Portra 400, Gold 200, Ektar 100, Fuji 400H, Cinestill 800T, Superia 400, Tri-X 400, HP5 Plus).
 - **Generative effects** — pixelate/LED, Bayer and noise dithering, CMY halftone, gaussian splats, Voronoi glass, Kuwahara, flow lines (LIC), ink edges, ASCII, CRT.
@@ -20,6 +21,15 @@ Open `index.html` in a recent Chrome, Edge, Safari or Firefox (WebGL2 required).
 - **Tools** — live histogram, 1:1 loupe (hold Z), before/after (hold \), undo/redo.
 
 Everything is rendered in a single WebGL2 shader, so the preview is live and exports are rendered at full resolution in tiles.
+
+## Scanning your negatives
+
+Film Lab doesn't digitise film; it edits the images you've already captured. The usual ways in:
+
+- **Phone or camera over a light pad.** Lay the negative flat on an even light source, shoot it straight on, filling the frame, and leave a little of the clear film edge (the rebate) in shot. A DSLR or mirrorless camera with a macro lens gives the most detail.
+- **Flatbed or film scanner.** Scan as a positive with no automatic colour correction, so the orange film base stays intact.
+
+Then drop the files in. Film Lab flags images that look like colour negatives; choose **Negative → Colour** (or **B&W**) in the Source panel. For a whole roll, get one frame right and click **Apply look to all** to share its film base and levels across every frame.
 
 ## Fonts
 
