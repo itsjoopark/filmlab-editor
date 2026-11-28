@@ -2,23 +2,29 @@
 
 An open-source film photo editor that runs entirely in the browser. Inspired by VSCO and Adobe Lightroom. One HTML file, no install, no server — your photos never leave your machine.
 
-![Filmlab Editor](images/filmlab-editor.png)
+![Film Lab editing a photo, with the edit panel on the right](images/filmlab-editor.png)
+
+![Negative mode with the Advanced colour-balance pad open](images/filmlab-editor-negative.png)
 
 ## Use it
 
-Open `index.html` in a recent Chrome, Edge, Safari or Firefox (WebGL2 required). Drop in photos or a whole folder, or click **Sample**.
+Open `index.html` in a recent Chrome, Edge, Safari or Firefox (WebGL2 required). Drop in photos or a whole folder, or click **Sample**. It also works on phones.
 
 ## Features
 
-- **Negatives** — colour and B&W negative inversion in density space, film base auto-detected from the rebate (or picked by hand), a prompt when an imported image looks like a negative, and one base and set of levels shared across a roll. An **Advanced** switch (off by default) opens a colour-balance pad for shadows, midtones and highlights (drag the node cool↔warm and green↔magenta; arrow keys nudge, double-click resets), plus contrast and clipping.
-- **Works on phones** — the editor adapts to small screens and touch.
+- **Negatives** — colour and B&W negative inversion in density space. The film base is auto-detected from the rebate (skipping bare light from the light pad or sprocket holes) or picked by hand, imports that look like a colour negative get a prompt to invert, and **Apply look to all** shares one base and set of levels across a roll.
+- **Advanced negative controls** (off by default) — a colour-balance pad for shadows, midtones and highlights: drag the node cool↔warm and green↔magenta, arrow keys nudge, double-click resets. Plus contrast and clipping.
 - **Light & colour** — exposure, contrast, highlights, shadows, fade, temperature, tint, saturation, vibrance, black & white, split toning.
 - **Film character** — resolution-aware grain, halation, vignette, and presets (Portra 400, Gold 200, Ektar 100, Fuji 400H, Cinestill 800T, Superia 400, Tri-X 400, HP5 Plus).
-- **Generative effects** — pixelate/LED, Bayer and noise dithering, CMY halftone, gaussian splats, Voronoi glass, Kuwahara, flow lines (LIC), ink edges, ASCII, CRT. A **Code editor** switch shows each effect's GLSL source to edit or copy; changes compile live, errors point to the line, and edits are saved in the browser.
+- **Generative effects** — pixelate/LED, Bayer and noise dithering, CMY halftone, gaussian splats, Voronoi glass, Kuwahara, flow lines (LIC), ink edges, ASCII, CRT.
+- **Effect code editor** — a **Code editor** switch under Generative shows the selected effect's GLSL with syntax highlighting. Edit it live or copy it; errors point to the line while the last working version keeps rendering, and edits are saved in the browser and used for export.
 - **Crop & rotate** — film-format aspect ratios (35mm, 645, 6×7, 4×5, XPan), straighten with auto-fit, 90° rotation, flips.
-- **Batch** — import a folder, per-image edits and history, apply a look to every frame.
-- **Export** — JPEG, PNG, WebP, AVIF, TIFF, BMP; several formats and several images at once as a .zip; full-size or scaled.
-- **Tools** — live histogram, 1:1 loupe (hold Z), before/after (hold \), undo/redo.
+- **Rolls & batches** — drag in a folder (subfolders included, in frame order) or use **Upload folder**; per-image edits and history; apply a look to every frame. New images always start with default settings.
+- **Undo that covers deletions** — removing an image, or **Clear all**, can be undone with ⌘Z, edits included.
+- **Export** — JPEG, PNG, WebP, AVIF, TIFF, BMP, plus **HTML** and **React (.jsx)** with the edited image embedded; several formats and several images at once as a .zip; full-size or scaled.
+- **Tools** — live histogram, 1:1 loupe (hold Z, magnifier cursor), before/after (hold \), undo/redo.
+- **Works on phones** — the photo stays on top with controls scrolling below, with larger touch targets.
+- **Quiet sound design** — soft cues for a few key moments (images added, negative inverted, export finished); click **Sound On** at the bottom of the panel to turn them off.
 
 Everything is rendered in a single WebGL2 shader, so the preview is live and exports are rendered at full resolution in tiles.
 
@@ -60,7 +66,9 @@ python3 build.py --standalone  # dist/film-lab.html — fonts embedded (git-igno
 | \ (hold) | Before / after |
 | Z (hold) | 1:1 loupe |
 | ⌘O · ⌘E | Upload · export |
-| ⌘Z · ⇧⌘Z | Undo · redo |
+| ⌘Z · ⇧⌘Z | Undo · redo (⌘Z also restores a removed image) |
+| ← → ↑ ↓ (colour pad focused) | Nudge the colour balance; ⇧ for bigger steps |
+| ⌘↵ (code editor) | Apply the effect code now |
 
 ## License
 
