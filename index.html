@@ -59,6 +59,7 @@ main{flex:1;min-height:0;display:flex;flex-direction:column;gap:6px;padding:0 10
 .sec.closed .car{transform:rotate(-90deg)}
 .sec.closed .sec-b{display:none}
 .sec-b{display:flex;flex-direction:column;gap:var(--gap);padding:2px 0 14px}
+.sec-b.adv{padding:4px 0 0;border-top:1px dashed rgba(255,255,255,.08);margin-top:2px}
 .row{display:flex;align-items:center;min-height:var(--h);gap:10px}
 .row>label{width:90px;flex:none;color:var(--lab);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;user-select:none}
 .row>label.rs{cursor:pointer}.row>label.rs:hover{color:#fff}
@@ -260,7 +261,7 @@ const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
 const tick=()=>new Promise(r=>setTimeout(r,0));
 
 /* ---------------- state ---------------- */
-const DEF={film:'none',base:null,lvl:null,exp:0,con:0,hil:0,sha:0,fade:0,temp:0,tint:0,sat:0,vib:0,mono:false,shc:'#2f6f9f',sht:0,hic:'#ffb066',hit:0,grain:0,gsize:1.4,hal:0,halr:8,vig:0,ang:0,fx:'none',fxa:1,fxs:8,fxd:.5,fxl:4,fxp:0,ink:'#14110f',paper:'#efe9dc'};
+const DEF={film:'none',base:null,lvl:null,nbr:0,nbg:0,nbb:0,nwr:0,nwg:0,nwb:0,nmr:0,nmg:0,nmb:0,nst:0,nsn:0,nht:0,nhn:0,ndr:2,nclip:.1,exp:0,con:0,hil:0,sha:0,fade:0,temp:0,tint:0,sat:0,vib:0,mono:false,shc:'#2f6f9f',sht:0,hic:'#ffb066',hit:0,grain:0,gsize:1.4,hal:0,halr:8,vig:0,ang:0,fx:'none',fxa:1,fxs:8,fxd:.5,fxl:4,fxp:0,ink:'#14110f',paper:'#efe9dc'};
 const FXKEYS=['fx','fxa','fxs','fxd','fxl','fxp','ink','paper'];
 const FXLIST=[
  ['none','None',{}],
@@ -279,6 +280,9 @@ const FXLIST=[
 const FXIDX=Object.fromEntries(FXLIST.map((f,i)=>[f[0],i]));
 const FXCFG=Object.fromEntries(FXLIST.map(f=>[f[0],f[2]]));
 const LOOK=['exp','con','hil','sha','fade','temp','tint','sat','vib','mono','shc','sht','hic','hit','grain','gsize','hal','halr','vig'];
+// Advanced negative controls (per-channel points, midtones, tone-masked casts, print range, clipping)
+const NEG=['nbr','nbg','nbb','nwr','nwg','nwb','nmr','nmg','nmb','nst','nsn','nht','nhn','ndr','nclip'];
+let negAdv=false;
 const GDEF={M:[1,0,0,1],crop:[0,0,1,1],aspect:'free'};
 const FILMS=[['none','Off'],['color','Colour'],['bw','B&W']];
 let P=structuredClone(DEF),G=structuredClone(GDEF);
@@ -316,10 +320,10 @@ uniform vec2 S,OS,OUT;
 uniform vec4 M,C,TL;
 uniform float PXS,ANG;
 uniform int BYP,INV,MONO,FX,FXP;
-uniform vec3 BASE,ILO,IHI,SHC,HIC,INK,PAPER;
+uniform vec3 BASE,ILO,IHI,SHC,HIC,INK,PAPER,NBLK,NWHT,NMID,NSB,NHB;
+uniform float NDR;
 uniform float EXP,CON,HIL,SHA,FADE,TEMP,TINT,SAT,VIB,SHT,HIT,GRA,GSZ,HAL,HALR,VIG,FXA,FXS,FXD,FXL;
 const vec3 LW=vec3(.2126,.7152,.0722);
-const float DR=2.; // log10 range of scene exposure the normalised density maps onto
 float LODB=0.;
 vec2 toSrc(vec2 u){vec2 p=(u-.5)*OS;float c=cos(ANG),s=sin(ANG);p=vec2(c*p.x-s*p.y,s*p.x+c*p.y);vec2 d=p/OS;return vec2(M.x*d.x+M.y*d.y,M.z*d.x+M.w*d.y)+.5;}
 vec2 srcAt(vec2 g){return toSrc(C.xy+g*C.zw);}
@@ -329,9 +333,13 @@ vec3 pre(vec2 su){
  if(INV>0){ // density-space inversion: transmittance vs film base -> density -> normalised -> positive
   vec3 lin=pow(max(c,vec3(1./1024.)),vec3(2.2)),bl=pow(max(BASE,vec3(.02)),vec3(2.2));
   vec3 d=INV==2?vec3(-log2(clamp(dot(lin,LW)/dot(bl,LW),1e-4,1.))*.30103):-log2(clamp(lin/bl,1e-4,1.))*.30103;
-  vec3 dn=clamp((d-ILO)/max(IHI-ILO,vec3(.01)),0.,1.);
-  vec3 L=(exp2((dn-1.)*DR*3.321928)-.01)/.99;
+  vec3 bk=NBLK,wt=NWHT,md=NMID;if(INV==2){bk=bk.rrr;wt=wt.rrr;md=md.rrr;}
+  vec3 sp=max(IHI-ILO,vec3(.01)),lo=ILO+bk*sp*.5,hi=IHI-wt*sp*.5; // per-channel black / white points
+  vec3 dn=pow(clamp((d-lo)/max(hi-lo,vec3(.01)),0.,1.),exp2(-md)); // per-channel midtones
+  float k=exp2(-NDR*3.321928); // NDR = log10 scene range the density maps onto (print contrast)
+  vec3 L=(exp2((dn-1.)*NDR*3.321928)-k)/(1.-k);
   c=pow(max(L,0.),vec3(1./2.2));
+  float lu=dot(c,LW);c=clamp(c+NSB*pow(1.-lu,2.)*.25+NHB*lu*lu*.25,0.,1.); // shadow / highlight casts
  }
  if(BYP==1)return c;
  vec3 l=pow(c,vec3(2.2))*exp2(EXP);
@@ -471,7 +479,7 @@ function initGL(){
  vao=gl.createVertexArray();gl.bindVertexArray(vao);
  const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);
  gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,2,gl.FLOAT,false,0,0);
- 'T S OS OUT M C TL PXS ANG BYP INV MONO BASE ILO IHI SHC HIC EXP CON HIL SHA FADE TEMP TINT SAT VIB SHT HIT GRA GSZ HAL HALR VIG FX FXP INK PAPER FXA FXS FXD FXL'.split(' ').forEach(n=>U[n]=gl.getUniformLocation(prog,n));
+ 'T S OS OUT M C TL PXS ANG BYP INV MONO BASE ILO IHI NBLK NWHT NMID NSB NHB NDR SHC HIC EXP CON HIL SHA FADE TEMP TINT SAT VIB SHT HIT GRA GSZ HAL HALR VIG FX FXP INK PAPER FXA FXS FXD FXL'.split(' ').forEach(n=>U[n]=gl.getUniformLocation(prog,n));
  TILE=Math.min(2048,gl.getParameter(gl.MAX_RENDERBUFFER_SIZE),gl.getParameter(gl.MAX_TEXTURE_SIZE));
 }
 const hex=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16)/255);
@@ -484,6 +492,9 @@ function setU(C,TL,OUT,pxs,byp){
  f('PXS',pxs);f('ANG',P.ang*Math.PI/180);
  gl.uniform1i(U.BYP,byp?1:0);gl.uniform1i(U.INV,P.film==='color'?1:P.film==='bw'?2:0);gl.uniform1i(U.MONO,P.mono?1:0);
  gl.uniform3fv(U.BASE,baseCol());gl.uniform3fv(U.ILO,lv.lo);gl.uniform3fv(U.IHI,lv.hi);
+ const bal=(t,n)=>[t*.5+n*.25,-n*.5,-t*.5+n*.25];
+ gl.uniform3fv(U.NBLK,[P.nbr,P.nbg,P.nbb]);gl.uniform3fv(U.NWHT,[P.nwr,P.nwg,P.nwb]);gl.uniform3fv(U.NMID,[P.nmr,P.nmg,P.nmb]);
+ gl.uniform3fv(U.NSB,bal(P.nst,P.nsn));gl.uniform3fv(U.NHB,bal(P.nht,P.nhn));f('NDR',P.ndr);
  gl.uniform3fv(U.SHC,hex(P.shc));gl.uniform3fv(U.HIC,hex(P.hic));
  f('EXP',P.exp);f('CON',P.con);f('HIL',P.hil);f('SHA',P.sha);f('FADE',P.fade);f('TEMP',P.temp);f('TINT',P.tint);
  gl.uniform1i(U.FX,FXIDX[P.fx]||0);gl.uniform1i(U.FXP,+P.fxp||0);gl.uniform3fv(U.INK,hex(P.ink));gl.uniform3fv(U.PAPER,hex(P.paper));f('FXA',P.fxa);f('FXS',P.fxs);f('FXD',P.fxd);f('FXL',P.fxl);
@@ -580,8 +591,9 @@ function analyze(){
   for(let i=0;i<d.length;i+=4){const k=bin(den(.2126*LIN[d[i]]+.7152*LIN[d[i+1]]+.0722*LIN[d[i+2]],bl));I[0][k]++;I[1][k]++;I[2][k]++;n++}}
  else for(let i=0;i<d.length;i+=4){for(let c=0;c<3;c++)I[c][bin(den(LIN[d[i+c]],b[c]))]++;n++}
  const pct=(H,q)=>{const t=q*n;let a=0;for(let i=0;i<NB;i++){a+=H[i];if(a>=t)return i/(NB-1)*DM}return DM};
- lv.lo=[0,1,2].map(c=>pct(I[c],.001));
- lv.hi=[0,1,2].map(c=>Math.max(pct(I[c],.999),lv.lo[c]+.05));
+ const q=clamp(P.nclip,0,5)/100;
+ lv.lo=[0,1,2].map(c=>pct(I[c],q));
+ lv.hi=[0,1,2].map(c=>Math.max(pct(I[c],1-q),lv.lo[c]+.05));
 }
 
 /* ---------------- library (multi-image / folder) ---------------- */
@@ -677,7 +689,7 @@ async function pumpThumbs(){
 function syncLookToAll(){
  if(!img)return;const n=items.length,neg=P.film!=='none';
  if(neg){P.base=[...baseCol()];P.lvl=[[...lv.lo],[...lv.hi]];sync();commit()}
- for(const it of items){if(it===items[cur])continue;LOOK.concat(FXKEYS).forEach(k=>it.P[k]=P[k]);it.P.film=P.film;it.P.base=P.base&&[...P.base];it.P.lvl=P.lvl&&structuredClone(P.lvl);it.edited=true;updThumb(it)}
+ for(const it of items){if(it===items[cur])continue;LOOK.concat(FXKEYS).forEach(k=>it.P[k]=P[k]);it.P.film=P.film;NEG.forEach(k=>it.P[k]=P[k]);it.P.base=P.base&&[...P.base];it.P.lvl=P.lvl&&structuredClone(P.lvl);it.edited=true;updThumb(it)}
  toast(neg?`Look and film base applied to ${n-1} other image${n===2?'':'s'}`:`Look applied to ${n-1} other image${n===2?'':'s'}`,2200);
 }
 
@@ -791,11 +803,23 @@ function buildPanel(){
   const x=btn('×',()=>{const it=items[cur];if(it)it.negNo=true;syncHint()},'b x');x.title='Dismiss';
   h.append(t,btn('Invert',()=>setFilm('color'),'b acc'),x);s.append(h)}
  {const w=el('div','btns');FILMS.forEach(([v,t])=>{const b=btn(t,()=>setFilm(v));b.dataset.film=v;w.append(b)});row(s,'Negative',w);
-  B.film=v=>{w.querySelectorAll('.b').forEach(b=>b.classList.toggle('on',b.dataset.film===v));const r=$('#baseRow');if(r)r.style.display=v==='none'?'none':'';syncHint()}}
+  B.film=v=>{w.querySelectorAll('.b').forEach(b=>b.classList.toggle('on',b.dataset.film===v));const r=$('#baseRow');if(r)r.style.display=v==='none'?'none':'';syncHint();syncAdv()}}
  {const w=el('div','ctl'),sw=el('div','sw');sw.id='baseSw';
   const pk=btn('Pick',()=>startPick());pk.id='bPick';pk.title='Click the unexposed film edge (rebate) between frames';
   const au=btn('Auto',()=>{P.base=null;P.lvl=null;analyze();syncBase();dirty();commit()});au.title='Detect the film base and levels from this frame';
   w.append(sw,pk,au);row(s,'Film base',w).id='baseRow';}
+ {const w=el('div','ctl'),c=el('input');c.type='checkbox';c.id='negAdvT';c.onchange=()=>{negAdv=c.checked;syncAdv()};w.append(c);
+  const i=el('span','info');i.id='baseRGB';w.append(i);row(s,'Advanced',w).id='advRow'}
+ {const a=el('div','sec-b adv');a.id='negAdv';s.append(a);
+  const re=()=>{if(!P.lvl)analyze()};
+  const CH=[['r','Red'],['g','Green'],['b','Blue']];
+  CH.forEach(([c,n])=>slider(a,'nb'+c,'Black · '+n,-1,1,.01));
+  CH.forEach(([c,n])=>slider(a,'nw'+c,'White · '+n,-1,1,.01));
+  CH.forEach(([c,n])=>slider(a,'nm'+c,'Mid · '+n,-1,1,.01));
+  slider(a,'nst','Shadow warm',-1,1,.01);slider(a,'nsn','Shadow tint',-1,1,.01);
+  slider(a,'nht','Hi-light warm',-1,1,.01);slider(a,'nhn','Hi-light tint',-1,1,.01);
+  slider(a,'ndr','Print range',1,3.5,.01);
+  slider(a,'nclip','Clipping %',0,2,.01,re);}
  s=section('Presets');
  {const g=el('div','chips');Object.keys(PRESETS).forEach(k=>g.append(btn(k,()=>applyPreset(k))));s.append(g)}
  s=section('Crop & rotate');
@@ -842,6 +866,13 @@ function buildPanel(){
 const FXR={};
 {let sT=0;panel.addEventListener('scroll',()=>{panel.classList.add('scrolling');clearTimeout(sT);sT=setTimeout(()=>panel.classList.remove('scrolling'),800)},{passive:true})}
 function setFilm(v){if(P.film===v)return;P.film=v;P.base=null;P.lvl=null;analyze();sync();dirty();commit();if(img&&v!=='none')toast(v==='bw'?'Inverted as B&W negative':'Inverted as colour negative',1400)}
+function syncAdv(){
+ const neg=P.film!=='none',a=$('#negAdv'),bw=P.film==='bw';if(!a)return;
+ $('#advRow').style.display=neg?'':'none';a.style.display=neg&&negAdv?'':'none';
+ a.querySelectorAll('.row').forEach(r=>{const l=r.querySelector('label'),t=l.dataset.t||(l.dataset.t=l.textContent);
+  const ch=/· (Green|Blue)$/.test(t),tone=/(warm|tint)$/.test(t);r.style.display=bw&&(ch||tone)?'none':'';l.textContent=bw?t.replace(' · Red',''):t});
+ const b=baseCol().map(v=>Math.round(v*255));$('#baseRGB').textContent=negAdv?`base ${b.join(' · ')}${P.lvl?' · roll':''}`:'';
+}
 function syncHint(){const h=$('#negHint'),it=items[cur];if(h)h.classList.toggle('on',!!(img&&it&&it.neg&&!it.negNo&&P.film==='none'))}
 function applyFx(id){P.fx=id;const c=FXCFG[id];if(c.s)P.fxs=c.s;if('dv' in c)P.fxd=c.dv;sync();dirty();commit();if(img&&id!=='none')toast(FXLIST[FXIDX[id]][1],1000)}
 function syncFx(){const c=FXCFG[P.fx]||{},on=P.fx!=='none',show=(r,v)=>{if(r)r.style.display=v?'':'none'};
@@ -849,7 +880,7 @@ function syncFx(){const c=FXCFG[P.fx]||{},on=P.fx!=='none',show=(r,v)=>{if(r)r.s
  show(FXR.amt,on);show(FXR.s,on);show(FXR.d,on&&!!c.d);if(c.d)FXR.d.querySelector('label').textContent=c.d;show(FXR.l,on&&!!c.l);show(FXR.p,on&&!!c.p);
  const duo=+P.fxp===2&&!!c.p;show(FXR.ink,on&&(c.ink||duo));show(FXR.paper,on&&(duo||(c.ink&&P.fx==='ink')));}
 function sync(){for(const k in B)if(k in P)B[k](P[k]);syncFx();const a=$('#aspect');if(a)a.value=G.aspect;syncBase();status()}
-function syncBase(){const b=baseCol();$('#baseSw').style.background=`rgb(${b.map(v=>Math.round(v*255)).join(',')})`;$('#baseSw').title=(P.base?'Picked':'Auto-detected')+(P.lvl?' · locked to roll':'')}
+function syncBase(){const b=baseCol();$('#baseSw').style.background=`rgb(${b.map(v=>Math.round(v*255)).join(',')})`;$('#baseSw').title=(P.base?'Picked':'Auto-detected')+(P.lvl?' · locked to roll':'');syncAdv()}
 function applyPreset(k){LOOK.forEach(x=>P[x]=DEF[x]);Object.assign(P,PRESETS[k]);sync();dirty();commit();if(img)toast(k==='None'?'Look cleared':k,1200)}
 function outDims(){
  const C=G.crop,fw=Math.max(1,Math.round(OW*C[2])),fh=Math.max(1,Math.round(OH*C[3]));let s=1;
