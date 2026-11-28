@@ -600,11 +600,11 @@ function analyze(){
 const natural=new Intl.Collator(undefined,{numeric:true,sensitivity:'base'});
 function addFiles(list){
  const files=[...list].filter(f=>f&&(IMG_RE.test(f.name)||(f.type||'').startsWith('image/')));
- if(!files.length){toast('No images found',2500);return}
+ if(!files.length){toast('No images found',2500);sound('error');return}
  files.sort((a,b)=>natural.compare(a.webkitRelativePath||a.name,b.webkitRelativePath||b.name));
  const first=items.length; // new images start clean; only Apply look to all shares a look
  for(const f of files)items.push({id:++uid,file:f,name:f.name.replace(/\.[^.]+$/,''),P:structuredClone(DEF),G:structuredClone(GDEF),hist:null,hi:-1,thumb:null,err:false,edited:false});
- renderStrip();pumpThumbs();
+ renderStrip();pumpThumbs();sound('add');
  toast(files.length===1?'Added '+files[0].name:`Added ${files.length} images`,1800);
  if(cur<0||!img)select(first);
 }
@@ -626,7 +626,7 @@ async function select(i){
  if(cur>=0&&img)stash();
  cur=i;const it=items[i],tok=++selToken;markStrip();
  toast('Loading '+it.file.name+'…',60000);
- let bm;try{bm=await decodeFile(it.file)}catch(e){console.error(e);it.err=true;updThumb(it);toast('Could not open '+it.file.name+(e.message?': '+e.message:''),4000);return}
+ let bm;try{bm=await decodeFile(it.file)}catch(e){console.error(e);it.err=true;updThumb(it);toast('Could not open '+it.file.name+(e.message?': '+e.message:''),4000);sound('error');return}
  if(tok!==selToken){bm.close&&bm.close();return}
  const down=uploadGPU(bm);bm.close&&bm.close();
  P=structuredClone(it.P);G=structuredClone(it.G);hist=it.hist||[];hi=it.hist?it.hi:-1;
@@ -690,6 +690,7 @@ function syncLookToAll(){
  if(!img)return;const n=items.length,neg=P.film!=='none';
  if(neg){P.base=[...baseCol()];P.lvl=[[...lv.lo],[...lv.hi]];sync();commit()}
  for(const it of items){if(it===items[cur])continue;LOOK.concat(FXKEYS).forEach(k=>it.P[k]=P[k]);it.P.film=P.film;NEG.forEach(k=>it.P[k]=P[k]);it.P.base=P.base&&[...P.base];it.P.lvl=P.lvl&&structuredClone(P.lvl);it.edited=true;updThumb(it)}
+sound('confirm');
  toast(neg?`Look and film base applied to ${n-1} other image${n===2?'':'s'}`:`Look applied to ${n-1} other image${n===2?'':'s'}`,2200);
 }
 
@@ -759,7 +760,7 @@ cb.addEventListener('pointerdown',e=>{
 });
 
 function enterCrop(){if(!img||cropMode)return;cropMode=true;cropBackup=[...G.crop];ov.classList.add('on');cropBtn();layout()}
-function exitCrop(apply){if(!cropMode)return;if(!apply)G.crop=cropBackup;cropMode=false;ov.classList.remove('on');cropBtn();layout();if(apply)commit()}
+function exitCrop(apply){if(!cropMode)return;if(!apply)G.crop=cropBackup;cropMode=false;ov.classList.remove('on');cropBtn();layout();if(apply){commit();sound('confirm')}}
 function cropBtn(){const b=$('#bCrop');if(!b)return;b.classList.toggle('on',cropMode);b.textContent=cropMode?'Apply ⏎':'Crop (C)'}
 const mul=(A,B)=>[A[0]*B[0]+A[1]*B[2],A[0]*B[1]+A[1]*B[3],A[2]*B[0]+A[3]*B[2],A[2]*B[1]+A[3]*B[3]];
 function swapAspect(){const a=G.aspect;if(a==='free'||a==='orig')return;const[x,y]=a.split(':');const s=y+':'+x;G.aspect=ASPECTS.some(o=>o[0]===s)?s:'free'}
@@ -862,10 +863,11 @@ function buildPanel(){
  {const w=el('div','ctl'),t=el('input','txt');t.type='text';t.id='nameInp';t.value='photo_edit';t.spellcheck=false;w.append(t);row(s,'File name',w).id='nameRow'}
  {const w=el('div','ctl'),i=el('span','info');i.id='outInfo';i.textContent='—';w.append(i);row(s,'Output',w)}
  const eb=btn('Export image',()=>exportRun(),'b acc exp');eb.id='bExp2';s.append(eb);
+ {const sc=el('div','sec');const b=el('div','sec-b');b.style.paddingTop='10px';const w=el('div','ctl'),c=el('input');c.type='checkbox';c.checked=SND.on;c.onchange=()=>setSound(c.checked);w.append(c);row(b,'Sounds',w);sc.append(b);panel.append(sc)}
 }
 const FXR={};
 {let sT=0;panel.addEventListener('scroll',()=>{panel.classList.add('scrolling');clearTimeout(sT);sT=setTimeout(()=>panel.classList.remove('scrolling'),800)},{passive:true})}
-function setFilm(v){if(P.film===v)return;P.film=v;P.base=null;P.lvl=null;analyze();sync();dirty();commit();if(img&&v!=='none')toast(v==='bw'?'Inverted as B&W negative':'Inverted as colour negative',1400)}
+function setFilm(v){if(P.film===v)return;P.film=v;P.base=null;P.lvl=null;analyze();sync();dirty();commit();if(img&&v!=='none'){toast(v==='bw'?'Inverted as B&W negative':'Inverted as colour negative',1400);sound('invert')}}
 function syncAdv(){
  const neg=P.film!=='none',a=$('#negAdv'),bw=P.film==='bw';if(!a)return;
  $('#advRow').style.display=neg?'':'none';a.style.display=neg&&negAdv?'':'none';
@@ -912,7 +914,7 @@ cv.addEventListener('click',e=>{
  const su=toSrcJS([C[0]+(e.clientX-r.left)/r.width*C[2],C[1]+(e.clientY-r.top)/r.height*C[3]]);
  const cx=Math.round(su[0]*(thumb.w-1)),cy=Math.round(su[1]*(thumb.h-1)),acc=[0,0,0];let n=0;
  for(let y=cy-3;y<=cy+3;y++)for(let x=cx-3;x<=cx+3;x++){if(x<0||y<0||x>=thumb.w||y>=thumb.h)continue;const i=(y*thumb.w+x)*4;acc[0]+=thumb.d[i];acc[1]+=thumb.d[i+1];acc[2]+=thumb.d[i+2];n++}
- if(!n)return;P.base=acc.map(v=>Math.max(v/n,8)/255);P.lvl=null;if(P.film==='none')P.film='color';analyze();sync();dirty();commit();stopPick();toast('Film base set',1200);
+ if(!n)return;P.base=acc.map(v=>Math.max(v/n,8)/255);P.lvl=null;if(P.film==='none')P.film='color';analyze();sync();dirty();commit();stopPick();toast('Film base set',1200);sound('confirm');
 });
 
 /* ---------------- histogram + ambient backdrop ---------------- */
@@ -1056,16 +1058,16 @@ async function exportRun(){
   }
   if(!out.length)throw new Error(failed[0]||'nothing was exported');
   const fail=failed.length?` · ${failed.length} failed`:'';
-  if(!zipIt){ok=await saveBlob(out[0].blob,out[0].name);if(ok)toast(`Exported ${out[0].name} · ${fmtBytes(out[0].blob.size)}${fail}`,3000)}
+  if(!zipIt){ok=await saveBlob(out[0].blob,out[0].name);if(ok){toast(`Exported ${out[0].name} · ${fmtBytes(out[0].blob.size)}${fail}`,3000);sound('done')}}
   else{
    toast('Building zip…',60000);await tick();
    const files=[];for(const o of out)files.push({name:o.name,data:new Uint8Array(await o.blob.arrayBuffer())});
    const z=makeZip(files);ok=await saveBlob(z,(idx.length>1?'film-lab_export':zname)+'.zip');
-   if(ok)toast(`Exported ${out.length} file${out.length>1?'s':''} in a .zip · ${fmtBytes(z.size)}${fail}`,4000);
+   if(ok){toast(`Exported ${out.length} file${out.length>1?'s':''} in a .zip · ${fmtBytes(z.size)}${fail}`,4000);sound('done')}
   }
   if(!ok)toast('Export cancelled');
   if(failed.length)console.warn('Failed:',failed);
- }catch(e){console.error(e);toast('Export failed: '+e.message,5000)}
+ }catch(e){console.error(e);toast('Export failed: '+e.message,5000);sound('error')}
  finally{busy=false;if(!single){cur=-1;img=false;await select(keep)}setBusy(false)}
 }
 const CRC=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
@@ -1162,6 +1164,31 @@ function lzw(src,need){
  return out;
 }
 
+/* ---------------- sound ----------------
+   Subtle earcons for the few moments that matter (Material: feedback for key actions, a rare hero
+   sound, silence for frequent actions). Synthesised, short, very quiet. Sliders, presets, effects,
+   undo, compare and image navigation stay silent. */
+const SND={on:(()=>{try{return localStorage.getItem('filmlab.sound')!=='off'}catch(e){return true}})(),ac:null};
+function tone(f0,f1,dur,gain,type='sine',at=0){
+ const a=SND.ac,t=a.currentTime+at,o=a.createOscillator(),g=a.createGain();
+ o.type=type;o.frequency.setValueAtTime(f0,t);if(f1!==f0)o.frequency.exponentialRampToValueAtTime(f1,t+dur*.8);
+ g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(gain,t+.006);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+ o.connect(g).connect(a.destination);o.start(t);o.stop(t+dur+.02);
+}
+function sound(kind){
+ if(!SND.on||document.hidden)return;
+ try{
+  if(!SND.ac){const C=window.AudioContext||window.webkitAudioContext;if(!C)return;SND.ac=new C()}
+  if(SND.ac.state==='suspended')SND.ac.resume();
+  if(kind==='confirm')tone(880,880,.07,.035);                                  // a direct action took effect
+  else if(kind==='add')tone(520,780,.09,.03);                                  // images arrived
+  else if(kind==='invert'){tone(392,392,.08,.03);tone(587,587,.12,.03,'sine',.05)} // negative -> positive
+  else if(kind==='done'){tone(659,659,.12,.04);tone(988,988,.22,.035,'sine',.08)}  // export finished (hero)
+  else if(kind==='error')tone(240,200,.14,.035,'triangle');                     // something failed
+ }catch(e){}
+}
+function setSound(on){SND.on=on;try{localStorage.setItem('filmlab.sound',on?'on':'off')}catch(e){}if(on)sound('confirm')}
+
 /* ---------------- misc UI ---------------- */
 let tT=0;function toast(m,ms=2000){const t=$('#toast');clearTimeout(tT);if(!m){t.classList.remove('on');return}t.textContent=m;t.classList.add('on');tT=setTimeout(()=>t.classList.remove('on'),ms)}
 function setCompare(on){if(!img)return;comparing=on;$('#badge').classList.toggle('on',on);$('#bCmp').classList.toggle('on',on);dirty()}
@@ -1169,7 +1196,7 @@ const fF=$('#fFiles'),fD=$('#fDir');
 fF.onchange=()=>{addFiles(fF.files);fF.value=''};fD.onchange=()=>{addFiles(fD.files);fD.value=''};
 $('#bUpFiles').onclick=()=>fF.click();$('#bUpDir').onclick=()=>fD.click();
 function dataURLBlob(u){const i=u.indexOf(','),bin=atob(u.slice(i+1)),a=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)a[k]=bin.charCodeAt(k);return new Blob([a],{type:u.slice(5,u.indexOf(';'))})}
-$('#bSample').onclick=()=>{if(busy)return;try{addFiles([new File([dataURLBlob(SAMPLE)],'pnw_pond.jpg',{type:'image/jpeg'})])}catch(e){console.error(e);toast('Could not load sample: '+e.message,4000)}};
+$('#bSample').onclick=()=>{if(busy)return;try{addFiles([new File([dataURLBlob(SAMPLE)],'pnw_pond.jpg',{type:'image/jpeg'})])}catch(e){console.error(e);toast('Could not load sample: '+e.message,4000);sound('error')}};
 $('#bSync').onclick=syncLookToAll;$('#bClear').onclick=clearAll;
 $('#bExp').onclick=()=>exportRun();$('#bUndo').onclick=undo;$('#bRedo').onclick=redo;
 $('#bLoupe').onclick=()=>setLoupe(!loupeOn);
