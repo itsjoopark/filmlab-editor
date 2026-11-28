@@ -64,4 +64,4 @@ python3 build.py --standalone  # dist/film-lab.html — fonts embedded (git-igno
 
 ## License
 
-Code: MIT — see [LICENSE](LICENSE). The sample photo (`assets/pnw_pond.jpg`) is © Jules (@itsjoopark), all rights reserved. ABC Areal is © Dinamo and not part of this repository.
+Code: MIT — see [LICENSE](LICENSE). The sample photo (`assets/pnw_pond.jpg`) is © Jules (@itsjoopark), all rights reserved. The page background (`assets/background.jpg`) is a photo from Unsplash, used under the Unsplash License. ABC Areal is © Dinamo and not part of this repository.
