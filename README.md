@@ -10,7 +10,7 @@ Open `index.html` in a recent Chrome, Edge, Safari or Firefox (WebGL2 required).
 
 ## Features
 
-- **Negatives** — colour and B&W negative inversion in density space, film base auto-detected from the rebate (or picked by hand), a prompt when an imported image looks like a negative, and one base and set of levels shared across a roll. An **Advanced** switch (off by default) exposes per-channel black, white and midtone points, separate shadow and highlight colour casts, print range and clipping.
+- **Negatives** — colour and B&W negative inversion in density space, film base auto-detected from the rebate (or picked by hand), a prompt when an imported image looks like a negative, and one base and set of levels shared across a roll. An **Advanced** switch (off by default) opens a colour-balance pad for shadows, midtones and highlights (drag the node cool↔warm and green↔magenta; arrow keys nudge, double-click resets), plus contrast and clipping.
 - **Works on phones** — the editor adapts to small screens and touch.
 - **Light & colour** — exposure, contrast, highlights, shadows, fade, temperature, tint, saturation, vibrance, black & white, split toning.
 - **Film character** — resolution-aware grain, halation, vignette, and presets (Portra 400, Gold 200, Ektar 100, Fuji 400H, Cinestill 800T, Superia 400, Tri-X 400, HP5 Plus).

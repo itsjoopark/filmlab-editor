@@ -59,6 +59,26 @@ main{flex:1;min-height:0;display:flex;flex-direction:column;gap:6px;padding:0 10
 .sec.closed .car{transform:rotate(-90deg)}
 .sec.closed .sec-b{display:none}
 .sec-b{display:flex;flex-direction:column;gap:var(--gap);padding:2px 0 14px}
+.pad{position:relative;height:208px;border-radius:12px;overflow:hidden;touch-action:none;cursor:crosshair;outline:none;user-select:none;-webkit-user-select:none;
+ background:radial-gradient(circle at 50% 50%,rgba(20,20,20,.55),rgba(20,20,20,0) 62%),
+  linear-gradient(to right,rgba(70,150,255,.26),rgba(70,150,255,0) 45%,rgba(255,170,60,0) 55%,rgba(255,170,60,.26)),
+  linear-gradient(to bottom,rgba(235,80,215,.22),rgba(235,80,215,0) 45%,rgba(90,220,120,0) 55%,rgba(90,220,120,.2)),rgba(0,0,0,.25);
+ border:1px solid rgba(255,255,255,.08)}
+.pad:focus-visible{border-color:var(--acc)}
+.pad .gr{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.06) 1px,transparent 1px);background-size:25% 25%;background-position:-1px -1px;pointer-events:none}
+.pad .ax{position:absolute;color:var(--dim);font-size:10.5px;pointer-events:none;letter-spacing:.02em}
+.pad .ax-t{top:8px;left:50%;transform:translateX(-50%)}.pad .ax-b{bottom:8px;left:50%;transform:translateX(-50%)}
+.pad .ax-l,.pad .ax-r{top:50%;writing-mode:vertical-rl}
+.pad .ax-l{left:7px;transform:translateY(-50%) rotate(180deg)}.pad .ax-r{right:7px;transform:translateY(-50%)}
+.pad .ctr{position:absolute;left:50%;top:50%;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;background:rgba(255,255,255,.25);pointer-events:none}
+.pad .nd{position:absolute;left:0;top:0;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;background:#fff;box-shadow:0 1px 5px rgba(0,0,0,.5),0 0 0 6px rgba(255,255,255,.1),0 0 28px 10px rgba(255,255,255,.12);pointer-events:none;transition:transform 200ms var(--ease-out)}
+.pad .gh{position:absolute;left:0;top:0;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;border:1.5px solid rgba(255,255,255,.45);pointer-events:none;transition:transform 200ms var(--ease-out)}
+.pad .gh::after{content:attr(data-l);position:absolute;left:11px;top:-4px;font-size:9px;color:var(--dim)}
+.pad.drag .nd{transition:none}
+.padinfo{display:flex;align-items:center;gap:8px;color:var(--dim);font-variant-numeric:tabular-nums;min-height:var(--h)}
+.padinfo span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (pointer:coarse){.pad{height:240px}.pad .nd{width:24px;height:24px;margin:-12px 0 0 -12px}}
+@media (prefers-reduced-motion:reduce){.pad .nd,.pad .gh{transition:none}}
 .sec-b.adv{padding:4px 0 0;border-top:1px dashed rgba(255,255,255,.08);margin-top:2px}
 .row{display:flex;align-items:center;min-height:var(--h);gap:10px}
 .row>label{width:90px;flex:none;color:var(--lab);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;user-select:none}
@@ -263,7 +283,7 @@ const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
 const tick=()=>new Promise(r=>setTimeout(r,0));
 
 /* ---------------- state ---------------- */
-const DEF={film:'none',base:null,lvl:null,nbr:0,nbg:0,nbb:0,nwr:0,nwg:0,nwb:0,nmr:0,nmg:0,nmb:0,nst:0,nsn:0,nht:0,nhn:0,ndr:2,nclip:.1,exp:0,con:0,hil:0,sha:0,fade:0,temp:0,tint:0,sat:0,vib:0,mono:false,shc:'#2f6f9f',sht:0,hic:'#ffb066',hit:0,grain:0,gsize:1.4,hal:0,halr:8,vig:0,ang:0,fx:'none',fxa:1,fxs:8,fxd:.5,fxl:4,fxp:0,ink:'#14110f',paper:'#efe9dc'};
+const DEF={film:'none',base:null,lvl:null,nsx:0,nsy:0,nmx:0,nmy:0,nhx:0,nhy:0,ndr:2,nclip:.1,exp:0,con:0,hil:0,sha:0,fade:0,temp:0,tint:0,sat:0,vib:0,mono:false,shc:'#2f6f9f',sht:0,hic:'#ffb066',hit:0,grain:0,gsize:1.4,hal:0,halr:8,vig:0,ang:0,fx:'none',fxa:1,fxs:8,fxd:.5,fxl:4,fxp:0,ink:'#14110f',paper:'#efe9dc'};
 const FXKEYS=['fx','fxa','fxs','fxd','fxl','fxp','ink','paper'];
 const FXLIST=[
  ['none','None',{}],
@@ -282,8 +302,10 @@ const FXLIST=[
 const FXIDX=Object.fromEntries(FXLIST.map((f,i)=>[f[0],i]));
 const FXCFG=Object.fromEntries(FXLIST.map(f=>[f[0],f[2]]));
 const LOOK=['exp','con','hil','sha','fade','temp','tint','sat','vib','mono','shc','sht','hic','hit','grain','gsize','hal','halr','vig'];
-// Advanced negative controls (per-channel points, midtones, tone-masked casts, print range, clipping)
-const NEG=['nbr','nbg','nbb','nwr','nwg','nwb','nmr','nmg','nmb','nst','nsn','nht','nhn','ndr','nclip'];
+// Advanced negative controls: a colour-balance pad per tone range (x = cool→warm, y = green→magenta),
+// which drives per-channel black points (shadows), midtones and white points (highlights); plus contrast and clipping.
+const NEG=['nsx','nsy','nmx','nmy','nhx','nhy','ndr','nclip'];
+const RANGES=[['s','Shadows'],['m','Midtones'],['h','Highlights']];let padRange='m';
 let negAdv=false;
 const GDEF={M:[1,0,0,1],crop:[0,0,1,1],aspect:'free'};
 const FILMS=[['none','Off'],['color','Colour'],['bw','B&W']];
@@ -322,7 +344,7 @@ uniform vec2 S,OS,OUT;
 uniform vec4 M,C,TL;
 uniform float PXS,ANG;
 uniform int BYP,INV,MONO,FX,FXP;
-uniform vec3 BASE,ILO,IHI,SHC,HIC,INK,PAPER,NBLK,NWHT,NMID,NSB,NHB;
+uniform vec3 BASE,ILO,IHI,SHC,HIC,INK,PAPER,NBLK,NWHT,NMID;
 uniform float NDR;
 uniform float EXP,CON,HIL,SHA,FADE,TEMP,TINT,SAT,VIB,SHT,HIT,GRA,GSZ,HAL,HALR,VIG,FXA,FXS,FXD,FXL;
 const vec3 LW=vec3(.2126,.7152,.0722);
@@ -335,13 +357,12 @@ vec3 pre(vec2 su){
  if(INV>0){ // density-space inversion: transmittance vs film base -> density -> normalised -> positive
   vec3 lin=pow(max(c,vec3(1./1024.)),vec3(2.2)),bl=pow(max(BASE,vec3(.02)),vec3(2.2));
   vec3 d=INV==2?vec3(-log2(clamp(dot(lin,LW)/dot(bl,LW),1e-4,1.))*.30103):-log2(clamp(lin/bl,1e-4,1.))*.30103;
-  vec3 bk=NBLK,wt=NWHT,md=NMID;if(INV==2){bk=bk.rrr;wt=wt.rrr;md=md.rrr;}
+  vec3 bk=NBLK,wt=NWHT,md=NMID;
   vec3 sp=max(IHI-ILO,vec3(.01)),lo=ILO+bk*sp*.5,hi=IHI-wt*sp*.5; // per-channel black / white points
   vec3 dn=pow(clamp((d-lo)/max(hi-lo,vec3(.01)),0.,1.),exp2(-md)); // per-channel midtones
   float k=exp2(-NDR*3.321928); // NDR = log10 scene range the density maps onto (print contrast)
   vec3 L=(exp2((dn-1.)*NDR*3.321928)-k)/(1.-k);
   c=pow(max(L,0.),vec3(1./2.2));
-  float lu=dot(c,LW);c=clamp(c+NSB*pow(1.-lu,2.)*.25+NHB*lu*lu*.25,0.,1.); // shadow / highlight casts
  }
  if(BYP==1)return c;
  vec3 l=pow(c,vec3(2.2))*exp2(EXP);
@@ -481,7 +502,7 @@ function initGL(){
  vao=gl.createVertexArray();gl.bindVertexArray(vao);
  const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);
  gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,2,gl.FLOAT,false,0,0);
- 'T S OS OUT M C TL PXS ANG BYP INV MONO BASE ILO IHI NBLK NWHT NMID NSB NHB NDR SHC HIC EXP CON HIL SHA FADE TEMP TINT SAT VIB SHT HIT GRA GSZ HAL HALR VIG FX FXP INK PAPER FXA FXS FXD FXL'.split(' ').forEach(n=>U[n]=gl.getUniformLocation(prog,n));
+ 'T S OS OUT M C TL PXS ANG BYP INV MONO BASE ILO IHI NBLK NWHT NMID NDR SHC HIC EXP CON HIL SHA FADE TEMP TINT SAT VIB SHT HIT GRA GSZ HAL HALR VIG FX FXP INK PAPER FXA FXS FXD FXL'.split(' ').forEach(n=>U[n]=gl.getUniformLocation(prog,n));
  TILE=Math.min(2048,gl.getParameter(gl.MAX_RENDERBUFFER_SIZE),gl.getParameter(gl.MAX_TEXTURE_SIZE));
 }
 const hex=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16)/255);
@@ -494,9 +515,9 @@ function setU(C,TL,OUT,pxs,byp){
  f('PXS',pxs);f('ANG',P.ang*Math.PI/180);
  gl.uniform1i(U.BYP,byp?1:0);gl.uniform1i(U.INV,P.film==='color'?1:P.film==='bw'?2:0);gl.uniform1i(U.MONO,P.mono?1:0);
  gl.uniform3fv(U.BASE,baseCol());gl.uniform3fv(U.ILO,lv.lo);gl.uniform3fv(U.IHI,lv.hi);
- const bal=(t,n)=>[t*.5+n*.25,-n*.5,-t*.5+n*.25];
- gl.uniform3fv(U.NBLK,[P.nbr,P.nbg,P.nbb]);gl.uniform3fv(U.NWHT,[P.nwr,P.nwg,P.nwb]);gl.uniform3fv(U.NMID,[P.nmr,P.nmg,P.nmb]);
- gl.uniform3fv(U.NSB,bal(P.nst,P.nsn));gl.uniform3fv(U.NHB,bal(P.nht,P.nhn));f('NDR',P.ndr);
+ // pad (x warm, y magenta) -> zero-sum per-channel offset; colour pads don't apply to B&W
+ const col=P.film==='color',bal=(x,y)=>col?[x*.5+y*.25,-y*.5,-x*.5+y*.25].map(v=>v*.45):[0,0,0];
+ gl.uniform3fv(U.NBLK,bal(P.nsx,P.nsy).map(v=>-v));gl.uniform3fv(U.NMID,bal(P.nmx,P.nmy));gl.uniform3fv(U.NWHT,bal(P.nhx,P.nhy));f('NDR',P.ndr);
  gl.uniform3fv(U.SHC,hex(P.shc));gl.uniform3fv(U.HIC,hex(P.hic));
  f('EXP',P.exp);f('CON',P.con);f('HIL',P.hil);f('SHA',P.sha);f('FADE',P.fade);f('TEMP',P.temp);f('TINT',P.tint);
  gl.uniform1i(U.FX,FXIDX[P.fx]||0);gl.uniform1i(U.FXP,+P.fxp||0);gl.uniform3fv(U.INK,hex(P.ink));gl.uniform3fv(U.PAPER,hex(P.paper));f('FXA',P.fxa);f('FXS',P.fxs);f('FXD',P.fxd);f('FXL',P.fxl);
@@ -815,13 +836,11 @@ function buildPanel(){
   const i=el('span','info');i.id='baseRGB';w.append(i);row(s,'Advanced',w).id='advRow'}
  {const a=el('div','sec-b adv');a.id='negAdv';s.append(a);
   const re=()=>{if(!P.lvl)analyze()};
-  const CH=[['r','Red'],['g','Green'],['b','Blue']];
-  CH.forEach(([c,n])=>slider(a,'nb'+c,'Black · '+n,-1,1,.01));
-  CH.forEach(([c,n])=>slider(a,'nw'+c,'White · '+n,-1,1,.01));
-  CH.forEach(([c,n])=>slider(a,'nm'+c,'Mid · '+n,-1,1,.01));
-  slider(a,'nst','Shadow warm',-1,1,.01);slider(a,'nsn','Shadow tint',-1,1,.01);
-  slider(a,'nht','Hi-light warm',-1,1,.01);slider(a,'nhn','Hi-light tint',-1,1,.01);
-  slider(a,'ndr','Print range',1,3.5,.01);
+  const tabs=el('div','btns');tabs.id='padTabs';RANGES.forEach(([k,t])=>{const b=btn(t,()=>{padRange=k;syncPad()});b.dataset.r=k;tabs.append(b)});a.append(tabs);
+  a.append(buildPad());
+  const inf=el('div','padinfo'),t=el('span');t.id='padRead';const rs=btn('Reset',()=>{P['n'+padRange+'x']=0;P['n'+padRange+'y']=0;syncPad();dirty();commit()});rs.title='Centre this tone range (or double-click the node)';
+  inf.append(t,rs);a.append(inf);
+  slider(a,'ndr','Contrast',1,3.5,.01);
   slider(a,'nclip','Clipping %',0,2,.01,re);}
  s=section('Presets');
  {const g=el('div','chips');Object.keys(PRESETS).forEach(k=>g.append(btn(k,()=>applyPreset(k))));s.append(g)}
@@ -870,11 +889,41 @@ function buildPanel(){
 const FXR={};
 {let sT=0;panel.addEventListener('scroll',()=>{panel.classList.add('scrolling');clearTimeout(sT);sT=setTimeout(()=>panel.classList.remove('scrolling'),800)},{passive:true})}
 function setFilm(v){if(P.film===v)return;P.film=v;P.base=null;P.lvl=null;analyze();sync();dirty();commit();if(img&&v!=='none'){toast(v==='bw'?'Inverted as B&W negative':'Inverted as colour negative',1400);sound('invert')}}
+function buildPad(){
+ const pad=el('div','pad');pad.id='pad';pad.tabIndex=0;pad.setAttribute('role','slider');pad.setAttribute('aria-label','Colour balance: left–right cool to warm, up–down magenta to green. Arrow keys move, Enter or 0 resets.');
+ pad.innerHTML='<div class="gr"></div><span class="ax ax-t">Magenta</span><span class="ax ax-b">Green</span><span class="ax ax-l">Cool</span><span class="ax ax-r">Warm</span><div class="ctr"></div>'+
+  RANGES.map(([k,t])=>`<div class="gh" data-r="${k}" data-l="${t[0]}"></div>`).join('')+'<div class="nd"></div>';
+ const set=(x,y)=>{const k=padRange,q=v=>Math.round(clamp(v,-1,1)*100)/100;P['n'+k+'x']=q(x);P['n'+k+'y']=q(y);syncPad();dirty()};
+ // dragging: a small detent at the centre so neutral is easy to hit
+ const at=e=>{const r=pad.getBoundingClientRect(),d=v=>Math.abs(v)<.05?0:v;return[d(((e.clientX-r.left)/r.width)*2-1),d(1-((e.clientY-r.top)/r.height)*2)]};
+ pad.addEventListener('pointerdown',e=>{e.preventDefault();pad.focus({preventScroll:true});pad.setPointerCapture(e.pointerId);pad.classList.add('drag');set(...at(e))});
+ pad.addEventListener('pointermove',e=>{if(pad.hasPointerCapture(e.pointerId))set(...at(e))});
+ const end=e=>{if(!pad.classList.contains('drag'))return;pad.classList.remove('drag');commit()};
+ pad.addEventListener('pointerup',end);pad.addEventListener('pointercancel',end);
+ pad.addEventListener('dblclick',()=>{set(0,0);commit()});
+ pad.addEventListener('keydown',e=>{const k=padRange,st=e.shiftKey?.1:.02,x=P['n'+k+'x'],y=P['n'+k+'y'];let h=true;
+  if(e.key==='ArrowLeft')set(x-st,y);else if(e.key==='ArrowRight')set(x+st,y);else if(e.key==='ArrowUp')set(x,y+st);else if(e.key==='ArrowDown')set(x,y-st);
+  else if(e.key==='Enter'||e.key==='0')set(0,0);else h=false;
+  if(h){e.preventDefault();e.stopPropagation()}});
+ pad.addEventListener('keyup',e=>{if(e.key.startsWith('Arrow')||e.key==='Enter'||e.key==='0'){e.stopPropagation();commit()}});
+ return pad;
+}
+function syncPad(){
+ const pad=$('#pad');if(!pad)return;const W=pad.clientWidth,H=pad.clientHeight;
+ const pos=k=>`translate(${(P['n'+k+'x']+1)/2*W}px,${(1-P['n'+k+'y'])/2*H}px)`;
+ pad.querySelector('.nd').style.transform=pos(padRange);
+ pad.querySelectorAll('.gh').forEach(g=>{const k=g.dataset.r;g.style.display=k===padRange?'none':'';g.style.transform=pos(k)});
+ $('#padTabs').querySelectorAll('.b').forEach(b=>b.classList.toggle('on',b.dataset.r===padRange));
+ const x=P['n'+padRange+'x'],y=P['n'+padRange+'y'],f=(v,a,b)=>Math.abs(v)<.005?'':`${v>0?a:b} ${Math.abs(v).toFixed(2)}`;
+ const t=[f(x,'Warm','Cool'),f(y,'Magenta','Green')].filter(Boolean).join(' · ');
+ $('#padRead').textContent=t||'Neutral';
+ pad.setAttribute('aria-valuetext',t||'Neutral');
+}
 function syncAdv(){
  const neg=P.film!=='none',a=$('#negAdv'),bw=P.film==='bw';if(!a)return;
  $('#advRow').style.display=neg?'':'none';a.style.display=neg&&negAdv?'':'none';
- a.querySelectorAll('.row').forEach(r=>{const l=r.querySelector('label'),t=l.dataset.t||(l.dataset.t=l.textContent);
-  const ch=/· (Green|Blue)$/.test(t),tone=/(warm|tint)$/.test(t);r.style.display=bw&&(ch||tone)?'none':'';l.textContent=bw?t.replace(' · Red',''):t});
+ ['#padTabs','#pad','.padinfo'].forEach(q=>{const e=a.querySelector(q);if(e)e.style.display=bw?'none':''});
+ if(neg&&negAdv&&!bw)requestAnimationFrame(syncPad);
  const b=baseCol().map(v=>Math.round(v*255));$('#baseRGB').textContent=negAdv?`base ${b.join(' · ')}${P.lvl?' · roll':''}`:'';
 }
 function syncHint(){const h=$('#negHint'),it=items[cur];if(h)h.classList.toggle('on',!!(img&&it&&it.neg&&!it.negNo&&P.film==='none'))}
@@ -883,7 +932,7 @@ function syncFx(){const c=FXCFG[P.fx]||{},on=P.fx!=='none',show=(r,v)=>{if(r)r.s
  document.querySelectorAll('#fxChips .b').forEach(b=>b.classList.toggle('on',b.dataset.fx===P.fx));
  show(FXR.amt,on);show(FXR.s,on);show(FXR.d,on&&!!c.d);if(c.d)FXR.d.querySelector('label').textContent=c.d;show(FXR.l,on&&!!c.l);show(FXR.p,on&&!!c.p);
  const duo=+P.fxp===2&&!!c.p;show(FXR.ink,on&&(c.ink||duo));show(FXR.paper,on&&(duo||(c.ink&&P.fx==='ink')));}
-function sync(){for(const k in B)if(k in P)B[k](P[k]);syncFx();const a=$('#aspect');if(a)a.value=G.aspect;syncBase();status()}
+function sync(){for(const k in B)if(k in P)B[k](P[k]);syncFx();syncPad();const a=$('#aspect');if(a)a.value=G.aspect;syncBase();status()}
 function syncBase(){const b=baseCol();$('#baseSw').style.background=`rgb(${b.map(v=>Math.round(v*255)).join(',')})`;$('#baseSw').title=(P.base?'Picked':'Auto-detected')+(P.lvl?' · locked to roll':'');syncAdv()}
 function applyPreset(k){LOOK.forEach(x=>P[x]=DEF[x]);Object.assign(P,PRESETS[k]);sync();dirty();commit();if(img)toast(k==='None'?'Look cleared':k,1200)}
 function outDims(){
