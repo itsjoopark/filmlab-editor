@@ -147,13 +147,14 @@ header .b{border:0}
 .exp.acc{margin-top:4px}
 
 /* filmstrip */
-.strip{position:absolute;left:12px;right:344px;bottom:12px;height:90px;border-radius:16px;display:none;align-items:center;gap:10px;padding:10px 10px 10px 12px;z-index:5}
+.strip{position:absolute;left:12px;right:344px;bottom:12px;height:102px;border-radius:16px;display:none;align-items:center;gap:10px;padding:10px 10px 10px 12px;z-index:5}
 .strip.on{display:flex;transition:opacity 250ms var(--ease-out),transform 250ms var(--ease-out)}
 @starting-style{.strip.on{opacity:0;transform:translateY(8px)}}
 .smeta{flex:none;width:112px;display:flex;flex-direction:column;gap:5px}
 .smeta .cnt{color:#fff;font-weight:500}
 .smeta .b{height:24px;padding:0 8px;font-size:11px}
-.thumbs{flex:1;min-width:0;height:100%;display:flex;gap:6px;overflow-x:auto;align-items:center;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.2) transparent;padding:2px}
+/* tall enough for 64px thumbs + a classic (always-shown) horizontal scrollbar; never scrolls vertically */
+.thumbs{flex:1;min-width:0;height:100%;display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;align-items:center;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.2) transparent;padding:2px}
 .th{position:relative;flex:none;width:64px;height:64px;border-radius:8px;overflow:hidden;cursor:pointer;background:rgba(255,255,255,.07);border:0;padding:0;outline:none;transition:transform 160ms var(--ease-out)}
 .th::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 1px rgba(255,255,255,.1);pointer-events:none;z-index:2;transition:box-shadow 150ms ease}
 .th:focus-visible::after{box-shadow:inset 0 0 0 2px var(--acc)}
@@ -188,7 +189,7 @@ header .b{border:0}
 .empty .sub{color:#9a9a9a;line-height:1.5}
 .toast{position:absolute;left:calc(50% - 166px);bottom:18px;transform:translateX(-50%);background:rgba(20,20,20,.75);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.12);padding:7px 12px;border-radius:9px;opacity:0;transform:translate(-50%,6px) scale(.98);transition:opacity 150ms var(--ease-out),transform 150ms var(--ease-out);pointer-events:none;white-space:nowrap;z-index:9}
 .toast.on{opacity:1;transform:translate(-50%,0) scale(1);transition-duration:250ms}
-.stage.has-strip .toast{bottom:114px}
+.stage.has-strip .toast{bottom:126px}
 .badge{position:absolute;top:14px;left:14px;background:rgba(0,0,0,.6);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);padding:4px 8px;border-radius:6px;display:none;z-index:7}
 .badge.on{display:block}
 .loupe{position:fixed;width:200px;height:200px;border:1px solid rgba(255,255,255,.35);border-radius:10px;pointer-events:none;display:none;z-index:30;box-shadow:0 10px 30px rgba(0,0,0,.5);background:#000}
@@ -231,12 +232,12 @@ header .b{border:0}
  .stage{flex:none;height:48%;height:48dvh;min-height:220px}
  .panel{position:static;width:auto;flex:1;min-height:0;border-radius:14px;padding:6px 14px 24px;-webkit-overflow-scrolling:touch}
  .foot{display:none}
- .strip{left:8px;right:8px;bottom:8px;height:78px;padding:8px;gap:8px}
+ .strip{left:8px;right:8px;bottom:8px;height:90px;padding:8px;gap:8px}
  .smeta{width:84px}.smeta .b{padding:0 4px;font-size:10.5px}
  .th{width:58px;height:58px}
  .empty{right:0}.empty .fr{padding:28px 22px;margin:0 10px}
  .toast{left:50%;max-width:calc(100% - 24px);overflow:hidden;text-overflow:ellipsis}
- .stage.has-strip .toast{bottom:96px}
+ .stage.has-strip .toast{bottom:108px}
 }
 @media (pointer:coarse){
  :root{--h:36px;--gap:8px}
