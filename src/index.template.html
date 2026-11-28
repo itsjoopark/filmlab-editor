@@ -32,7 +32,7 @@ header .b.on{background:var(--acc);color:#fff}
 header .b.acc{font-weight:500;background:var(--acc);color:#fff}
 header .b.ghost{background:none;color:#8a8a8a}
 @media (hover:hover) and (pointer:fine){header .b.ghost:hover{color:#ddd;background:#161616}}
-.b .ic{display:inline-block;margin-right:6px;opacity:.8}
+.b .ic{display:inline-flex;margin:0 7px 0 -2px;opacity:.85}.b .ic svg{display:block}
 
 main{flex:1;min-height:0;display:flex;flex-direction:column;gap:6px;padding:0 10px 10px;position:relative}
 .stage{flex:1;min-height:0;position:relative;background:#0e0e0e;overflow:hidden;border-radius:10px;user-select:none}
@@ -250,13 +250,13 @@ header .b{border:0}
   <div class="ttl">Film Lab<br><span>photo editor 1.1</span></div>
   <div class="sep"></div>
   <div class="grp">
-   <button class="b up" id="bUpFiles" title="Upload images (⌘O)"><span class="ic">↑</span>Upload<span class="lg">&nbsp;images</span></button>
-   <button class="b" id="bUpDir" title="Add a folder of scans"><span class="ic">▤</span>Upload folder</button>
-   <button class="b" id="bSample" title="Load the sample photo"><span class="ic">◐</span>Sample</button>
+   <button class="b up" id="bUpFiles" title="Upload images (⌘O)"><span class="ic"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 10V2.75M5 5.5l3-3 3 3"/><path d="M2.75 10.25v1.25a2 2 0 0 0 2 2h6.5a2 2 0 0 0 2-2v-1.25"/></svg></span>Upload<span class="lg">&nbsp;images</span></button>
+   <button class="b" id="bUpDir" title="Add a folder of scans"><span class="ic"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.75 4.5a1.75 1.75 0 0 1 1.75-1.75h2.6l1.6 1.6h4.8a1.75 1.75 0 0 1 1.75 1.75v5.65a1.75 1.75 0 0 1-1.75 1.75h-9a1.75 1.75 0 0 1-1.75-1.75z"/></svg></span>Upload folder</button>
+   <button class="b" id="bSample" title="Try Film Lab with a sample photo"><span class="ic"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1.75" y="2.75" width="12.5" height="10.5" rx="2"/><circle cx="5.6" cy="6.3" r="1.2"/><path d="M2.25 12.25 6 8.5l2.75 2.75 2-2 3 3"/></svg></span>Sample</button>
   </div>
   <div class="hr">
-   <button class="b" id="bUndo" title="Undo (⌘Z)" aria-label="Undo"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 3 2.5 6l3 3"/><path d="M2.5 6h7a4 4 0 0 1 0 8H7"/></svg></button>
-   <button class="b" id="bRedo" title="Redo (⇧⌘Z)" aria-label="Redo"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transform:scaleX(-1)"><path d="M5.5 3 2.5 6l3 3"/><path d="M2.5 6h7a4 4 0 0 1 0 8H7"/></svg></button>
+   <button class="b" id="bUndo" title="Undo (⌘Z)" aria-label="Undo"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 3 2.5 6l3 3"/><path d="M2.5 6h7a4 4 0 0 1 0 8H7"/></svg></button>
+   <button class="b" id="bRedo" title="Redo (⇧⌘Z)" aria-label="Redo"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transform:scaleX(-1)"><path d="M5.5 3 2.5 6l3 3"/><path d="M2.5 6h7a4 4 0 0 1 0 8H7"/></svg></button>
    <button class="b hide-s" id="bLoupe" title="1:1 loupe (hold Z)">Loupe</button>
    <button class="b" id="bCmp" title="Hold to compare (hold \)">Compare</button>
    <button class="b acc" id="bExp" title="Export current (⌘E)">Export</button>
