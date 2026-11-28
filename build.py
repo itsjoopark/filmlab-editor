@@ -7,7 +7,7 @@
 The ABC Areal fonts are licensed (Dinamo) and are never committed. Put
 ABCAreal-Regular.woff2, ABCAreal-Medium.woff2 and ABCArealMono-Regular.woff2
 in ./fonts/ to use them; without them the page falls back to system fonts.
-The sample photo in ./assets/ is embedded so the page works when opened from disk.
+The sample photo and page background in ./assets/ are embedded so the page works when opened from disk.
 """
 import base64
 import pathlib
@@ -38,7 +38,8 @@ def main():
     template = (ROOT / "src" / "index.template.html").read_text()
     fonts = "\n".join(font_face(f, n, w, standalone) for f, n, w in FONTS)
     sample = "data:image/jpeg;base64," + base64.b64encode((ROOT / "assets" / "pnw_pond.jpg").read_bytes()).decode()
-    html = template.replace("%%FONTS%%", fonts).replace("%%SAMPLE%%", sample)
+    bg = "data:image/jpeg;base64," + base64.b64encode((ROOT / "assets" / "background.jpg").read_bytes()).decode()
+    html = template.replace("%%FONTS%%", fonts).replace("%%SAMPLE%%", sample).replace("%%BG%%", bg)
     out = ROOT / ("dist/film-lab.html" if standalone else "index.html")
     out.parent.mkdir(exist_ok=True)
     out.write_text(html)
