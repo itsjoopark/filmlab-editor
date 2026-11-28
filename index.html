@@ -584,14 +584,13 @@ function analyze(){
 }
 
 /* ---------------- library (multi-image / folder) ---------------- */
-function lookTemplate(){const t=structuredClone(DEF);if(img){LOOK.concat(FXKEYS).forEach(k=>t[k]=P[k]);t.film=P.film;t.base=P.base;t.lvl=P.lvl}return t}
 const natural=new Intl.Collator(undefined,{numeric:true,sensitivity:'base'});
 function addFiles(list){
  const files=[...list].filter(f=>f&&(IMG_RE.test(f.name)||(f.type||'').startsWith('image/')));
  if(!files.length){toast('No images found',2500);return}
  files.sort((a,b)=>natural.compare(a.webkitRelativePath||a.name,b.webkitRelativePath||b.name));
- const tpl=lookTemplate(),first=items.length;
- for(const f of files)items.push({id:++uid,file:f,name:f.name.replace(/\.[^.]+$/,''),P:structuredClone(tpl),G:structuredClone(GDEF),hist:null,hi:-1,thumb:null,err:false,edited:false});
+ const first=items.length; // new images start clean; only Apply look to all shares a look
+ for(const f of files)items.push({id:++uid,file:f,name:f.name.replace(/\.[^.]+$/,''),P:structuredClone(DEF),G:structuredClone(GDEF),hist:null,hi:-1,thumb:null,err:false,edited:false});
  renderStrip();pumpThumbs();
  toast(files.length===1?'Added '+files[0].name:`Added ${files.length} images`,1800);
  if(cur<0||!img)select(first);
