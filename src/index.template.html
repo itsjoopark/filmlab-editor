@@ -48,8 +48,9 @@ main{flex:1;min-height:0;display:flex;flex-direction:column;gap:6px;padding:0 10
 /* glass */
 .glass{background:var(--glass);-webkit-backdrop-filter:blur(30px) saturate(175%);backdrop-filter:blur(30px) saturate(175%);border:1px solid var(--gline);
  box-shadow:inset 0 1px 0 rgba(255,255,255,.22),inset 0 0 0 1px rgba(255,255,255,.02),0 24px 60px -12px rgba(0,0,0,.6)}
-.panel{position:absolute;top:12px;right:22px;bottom:44px;width:320px;border-radius:18px;overflow-y:auto;overflow-x:hidden;padding:14px 16px 16px;z-index:6;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.18) transparent}
-.panel::-webkit-scrollbar{width:6px}.panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18);border-radius:3px}
+.panel{position:absolute;top:12px;right:22px;bottom:44px;width:320px;border-radius:18px;overflow-y:auto;overflow-x:hidden;padding:14px 16px 16px;z-index:6;scrollbar-width:thin;scrollbar-color:transparent transparent}
+.panel::-webkit-scrollbar{width:6px}.panel::-webkit-scrollbar-thumb{background:transparent;border-radius:3px}
+.panel.scrolling{scrollbar-color:rgba(255,255,255,.18) transparent}.panel.scrolling::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18)}
 .sec{border-top:1px solid rgba(255,255,255,.08)}
 .sec-h{display:flex;align-items:center;gap:6px;height:38px;cursor:pointer;color:#fff;user-select:none;font-weight:500;font-size:12.5px}
 .sec-h .car{display:inline-block;width:10px;color:var(--dim);transition:transform 200ms var(--ease-out)}
@@ -837,6 +838,7 @@ function buildPanel(){
  const eb=btn('Export image',()=>exportRun(),'b acc exp');eb.id='bExp2';s.append(eb);
 }
 const FXR={};
+{let sT=0;panel.addEventListener('scroll',()=>{panel.classList.add('scrolling');clearTimeout(sT);sT=setTimeout(()=>panel.classList.remove('scrolling'),800)},{passive:true})}
 function setFilm(v){if(P.film===v)return;P.film=v;P.base=null;P.lvl=null;analyze();sync();dirty();commit();if(img&&v!=='none')toast(v==='bw'?'Inverted as B&W negative':'Inverted as colour negative',1400)}
 function syncHint(){const h=$('#negHint'),it=items[cur];if(h)h.classList.toggle('on',!!(img&&it&&it.neg&&!it.negNo&&P.film==='none'))}
 function applyFx(id){P.fx=id;const c=FXCFG[id];if(c.s)P.fxs=c.s;if('dv' in c)P.fxd=c.dv;sync();dirty();commit();if(img&&id!=='none')toast(FXLIST[FXIDX[id]][1],1000)}
