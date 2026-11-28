@@ -75,7 +75,8 @@ main{flex:1;min-height:0;display:flex;flex-direction:column;gap:6px;padding:0 10
 .ced-s{position:relative;flex:1;min-width:0;overflow:hidden}
 .ced-p,.ced-s textarea{margin:0;padding:8px 10px;font:inherit;letter-spacing:0;tab-size:2;white-space:pre}
 .ced-p{position:absolute;left:0;top:0;color:#d6d9e0;pointer-events:none}
-.ced-s textarea{position:absolute;inset:0;width:100%;height:100%;resize:none;border:0;outline:none;background:transparent;color:transparent;caret-color:#fff;overflow:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.2) transparent}
+.ced-s textarea{position:absolute;inset:0;width:100%;height:100%;resize:none;border:0;outline:none;background:transparent;color:transparent;caret-color:#fff;overflow:auto;scrollbar-width:thin;scrollbar-color:transparent transparent}
+.ced-s textarea.scrolling{scrollbar-color:rgba(255,255,255,.2) transparent}
 .ced-s textarea::selection{background:rgba(91,147,255,.35)}
 .ced-p i{font-style:normal}.ced-p .c{color:#6f7d74}.ced-p .k{color:#d39bf0}.ced-p .t{color:#7fb6ff}.ced-p .n{color:#f4b678}.ced-p .f{color:#8fd6c9}.ced-p .u{color:#f08aa8}
 .ced-m{min-height:16px;font-size:11px;color:var(--dim)}
@@ -1307,7 +1308,7 @@ function buildCodeEditor(par){
  const ta=box.querySelector('textarea'),pre=box.querySelector('.ced-p'),gut=box.querySelector('.ced-g');
  const paint=()=>{pre.innerHTML=glHL(ta.value);const n=ta.value.split('\n').length;gut.innerHTML=Array.from({length:n},(_,i)=>`<span>${i+1}</span>`).join('');syncScroll()};
  const syncScroll=()=>{pre.style.transform=`translate(${-ta.scrollLeft}px,${-ta.scrollTop}px)`;gut.style.transform=`translateY(${-ta.scrollTop}px)`};
- ta.addEventListener('scroll',syncScroll);
+ let sbT=0;ta.addEventListener('scroll',()=>{syncScroll();ta.classList.add('scrolling');clearTimeout(sbT);sbT=setTimeout(()=>ta.classList.remove('scrolling'),800)},{passive:true});
  ta.addEventListener('input',()=>{paint();clearTimeout(ceT);ceT=setTimeout(applyCode,450)});
  ta.addEventListener('keydown',e=>{
   if(e.key==='Tab'){e.preventDefault();const a=ta.selectionStart,b=ta.selectionEnd;ta.setRangeText('  ',a,b,'end');ta.dispatchEvent(new Event('input'))}
