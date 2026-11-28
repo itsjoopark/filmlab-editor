@@ -56,10 +56,13 @@ main{flex:1;min-height:0;display:flex;flex-direction:column;gap:6px;padding:0 10
 .sndt{background:none;border:0;padding:4px 0;font:inherit;color:var(--dim);cursor:pointer;transition:color 150ms ease}
 @media (hover:hover) and (pointer:fine){.sndt:hover{color:#fff}}
 .sndt:focus-visible{outline:none;color:#fff;text-decoration:underline;text-underline-offset:3px}
-.pfade{position:sticky;z-index:3;display:block;height:36px;margin:0 -16px;pointer-events:none;opacity:0;transition:opacity 420ms ease}
-.pfade.t{top:-14px;margin-top:-14px;margin-bottom:-22px;background:linear-gradient(to bottom,rgba(255,255,255,.13),rgba(255,255,255,0))}
-.pfade.b{bottom:-16px;margin-bottom:-16px;margin-top:-20px;background:linear-gradient(to top,rgba(255,255,255,.13),rgba(255,255,255,0))}
-.panel.scrolling .pfade.on{opacity:1;transition:opacity 180ms var(--ease-out)}
+/* scroll edge fades: an overlay laid exactly over the panel (same radius), so the fade follows its curve */
+.pfx{position:absolute;z-index:7;pointer-events:none;overflow:hidden;display:none}
+.pfx.on{display:block}
+.pfx i{position:absolute;left:0;right:0;height:48px;opacity:0;transition:opacity 420ms ease}
+.pfx .ft{top:0;background:linear-gradient(to bottom,rgba(255,255,255,.14),rgba(255,255,255,.095) 28%,rgba(255,255,255,.045) 58%,rgba(255,255,255,.012) 82%,rgba(255,255,255,0))}
+.pfx .fb{bottom:0;background:linear-gradient(to top,rgba(255,255,255,.14),rgba(255,255,255,.095) 28%,rgba(255,255,255,.045) 58%,rgba(255,255,255,.012) 82%,rgba(255,255,255,0))}
+.pfx.scrolling i.show{opacity:1;transition:opacity 180ms var(--ease-out)}
 .panel.scrolling{scrollbar-color:rgba(255,255,255,.18) transparent}.panel.scrolling::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18)}
 .sec{border-top:1px solid rgba(255,255,255,.08)}
 .sec-h{display:flex;align-items:center;gap:6px;height:38px;cursor:pointer;color:#fff;user-select:none;font-weight:500;font-size:12.5px}
@@ -936,12 +939,14 @@ function buildPanel(){
   t.onclick=()=>{setSound(!SND.on);ui()};ui();sc.append(t);panel.append(sc)}
 }
 const FXR={};
-{let sT=0;const ft=el('div','pfade t'),fb=el('div','pfade b');
- // edge fades: only while scrolling, only on an edge that has content past it
- queueMicrotask(()=>{panel.prepend(ft);panel.append(fb)});
- panel.addEventListener('scroll',()=>{panel.classList.add('scrolling');
-  ft.classList.toggle('on',panel.scrollTop>2);fb.classList.toggle('on',panel.scrollTop+panel.clientHeight<panel.scrollHeight-2);
-  clearTimeout(sT);sT=setTimeout(()=>panel.classList.remove('scrolling'),800)},{passive:true})}
+{let sT=0;const fx=el('div','pfx'),ft=el('i','ft'),fb=el('i','fb');fx.append(ft,fb);fx.setAttribute('aria-hidden','true');
+ // keep the overlay on the panel's border box, with its radius, wherever the panel sits (desktop float or phone column)
+ const place=()=>{const m=panel.parentElement.getBoundingClientRect(),r=panel.getBoundingClientRect();
+  Object.assign(fx.style,{left:r.left-m.left+'px',top:r.top-m.top+'px',width:r.width+'px',height:r.height+'px',borderRadius:getComputedStyle(panel).borderRadius});fx.classList.add('on')};
+ queueMicrotask(()=>{panel.after(fx);place();new ResizeObserver(place).observe(panel)});addEventListener('resize',place);
+ panel.addEventListener('scroll',()=>{panel.classList.add('scrolling');fx.classList.add('scrolling');place();
+  ft.classList.toggle('show',panel.scrollTop>2);fb.classList.toggle('show',panel.scrollTop+panel.clientHeight<panel.scrollHeight-2);
+  clearTimeout(sT);sT=setTimeout(()=>{panel.classList.remove('scrolling');fx.classList.remove('scrolling')},800)},{passive:true})}
 function setFilm(v){if(P.film===v)return;P.film=v;P.base=null;P.lvl=null;analyze();sync();dirty();commit();if(img&&v!=='none'){toast(v==='bw'?'Inverted as B&W negative':'Inverted as colour negative',1400);sound('invert')}}
 function buildPad(){
  const pad=el('div','pad');pad.id='pad';pad.tabIndex=0;pad.setAttribute('role','slider');pad.setAttribute('aria-label','Colour balance: left–right cool to warm, up–down magenta to green. Arrow keys move, Enter or 0 resets.');
