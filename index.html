@@ -53,6 +53,10 @@ main{flex:1;min-height:0;display:flex;flex-direction:column;gap:6px;padding:0 10
  box-shadow:inset 0 1px 0 rgba(255,255,255,.22),inset 0 0 0 1px rgba(255,255,255,.02),0 24px 60px -12px rgba(0,0,0,.6)}
 .panel{position:absolute;top:12px;right:22px;bottom:44px;width:320px;border-radius:18px;overflow-y:auto;overflow-x:hidden;padding:14px 16px 16px;z-index:6;scrollbar-width:thin;scrollbar-color:transparent transparent}
 .panel::-webkit-scrollbar{width:6px}.panel::-webkit-scrollbar-thumb{background:transparent;border-radius:3px}
+.pfade{position:sticky;z-index:3;display:block;height:36px;margin:0 -16px;pointer-events:none;opacity:0;transition:opacity 420ms ease}
+.pfade.t{top:-14px;margin-top:-14px;margin-bottom:-22px;background:linear-gradient(to bottom,rgba(255,255,255,.13),rgba(255,255,255,0))}
+.pfade.b{bottom:-16px;margin-bottom:-16px;margin-top:-20px;background:linear-gradient(to top,rgba(255,255,255,.13),rgba(255,255,255,0))}
+.panel.scrolling .pfade.on{opacity:1;transition:opacity 180ms var(--ease-out)}
 .panel.scrolling{scrollbar-color:rgba(255,255,255,.18) transparent}.panel.scrolling::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18)}
 .sec{border-top:1px solid rgba(255,255,255,.08)}
 .sec-h{display:flex;align-items:center;gap:6px;height:38px;cursor:pointer;color:#fff;user-select:none;font-weight:500;font-size:12.5px}
@@ -86,8 +90,12 @@ main{flex:1;min-height:0;display:flex;flex-direction:column;gap:6px;padding:0 10
 .row>label.rs{cursor:pointer}@media (hover:hover) and (pointer:fine){.row>label.rs:hover{color:#fff}}
 .ctl{flex:1;min-width:0;display:flex;align-items:center;gap:var(--gap)}
 input[type=range]{-webkit-appearance:none;appearance:none;flex:1;min-width:0;height:18px;margin:0;--a:0%;--b:0%;background:linear-gradient(to right,var(--ctl2) 0 var(--a),var(--acc) var(--a) var(--b),var(--ctl2) var(--b)) center/100% 4px no-repeat;border-radius:4px;cursor:ew-resize}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:#fff;border:0;box-shadow:0 1px 4px rgba(0,0,0,.45),0 0 0 3px rgba(255,255,255,.12)}
-input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:#fff;border:0;box-shadow:0 1px 4px rgba(0,0,0,.45)}
+/* glass pill thumb: translucent body, bright rim, top highlight, soft drop shadow; grows while held */
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:15px;border-radius:8px;background:linear-gradient(180deg,rgba(250,250,252,.94),rgba(226,226,232,.82) 60%,rgba(238,238,242,.88));border:1px solid rgba(255,255,255,.85);box-shadow:inset 0 1px 1px rgba(255,255,255,.9),inset 0 -1px 2px rgba(255,255,255,.25),0 1px 2px rgba(0,0,0,.35),0 4px 12px rgba(0,0,0,.28);-webkit-backdrop-filter:blur(6px) saturate(160%);backdrop-filter:blur(6px) saturate(160%);transition:transform 160ms var(--ease-out),background-color 160ms ease;cursor:ew-resize}
+input[type=range]:active::-webkit-slider-thumb{transform:scale(1.18)}
+input[type=range]::-moz-range-thumb{box-sizing:border-box;width:24px;height:15px;border-radius:8px;background:linear-gradient(180deg,rgba(250,250,252,.94),rgba(226,226,232,.82) 60%,rgba(238,238,242,.88));border:1px solid rgba(255,255,255,.85);box-shadow:inset 0 1px 1px rgba(255,255,255,.9),inset 0 -1px 2px rgba(255,255,255,.25),0 1px 2px rgba(0,0,0,.35),0 4px 12px rgba(0,0,0,.28);-webkit-backdrop-filter:blur(6px) saturate(160%);backdrop-filter:blur(6px) saturate(160%);transition:transform 160ms var(--ease-out),background-color 160ms ease;cursor:ew-resize}
+input[type=range]:active::-moz-range-thumb{transform:scale(1.18)}
+input[type=range]:focus-visible::-webkit-slider-thumb{border-color:var(--acc);box-shadow:inset 0 1px 1px rgba(255,255,255,.9),0 0 0 3px rgba(91,147,255,.35),0 4px 12px rgba(0,0,0,.28)}
 input[type=range]::-moz-range-track{background:transparent}
 input[type=range]:focus{outline:none}
 .num,.txt{height:var(--h);display:inline-flex;align-items:center;background:var(--ctl);border:1px solid rgba(255,255,255,.06);color:var(--val);font:inherit;padding:0 8px;border-radius:7px;min-width:0}
@@ -203,7 +211,7 @@ header .b{border:0}
 @media (hover:hover) and (pointer:fine){.sheet .b.ghost:hover{color:#fff;background:rgba(255,255,255,.06)}}
 @media (max-width:860px){.scrim{align-items:flex-end;padding:0}.sheet{max-width:none;border-radius:20px 20px 0 0;padding-bottom:calc(18px + env(safe-area-inset-bottom));transform:translateY(24px)}@starting-style{.scrim.on .sheet{transform:translateY(24px)}}.dz{height:140px}}
 @media (prefers-reduced-motion:reduce){.sheet,.scrim.on .sheet{transform:none}@starting-style{.scrim.on .sheet{transform:none}}.dz.over svg{transform:none}}
-@media (prefers-reduced-motion:reduce){.b:active:not(:disabled),.th:active{transform:none}.toast,.toast.on{transform:translate(-50%,0)}.strip.on{transition:opacity 200ms ease}@starting-style{.strip.on{transform:none}}.sec-h .car{transition:none}.hint.on{transition:opacity 200ms ease}@starting-style{.hint.on{transform:none}}}
+@media (prefers-reduced-motion:reduce){.b:active:not(:disabled),.th:active{transform:none}.toast,.toast.on{transform:translate(-50%,0)}.strip.on{transition:opacity 200ms ease}@starting-style{.strip.on{transform:none}}.sec-h .car{transition:none}input[type=range]:active::-webkit-slider-thumb,input[type=range]:active::-moz-range-thumb{transform:none}.hint.on{transition:opacity 200ms ease}@starting-style{.hint.on{transform:none}}}
 @media (max-width:860px){
  html,body{height:100%}body{padding:0}
  .app{border-radius:0;max-height:none;height:100%;height:100dvh}
@@ -228,8 +236,8 @@ header .b{border:0}
  .b{touch-action:manipulation}
  #bCmp{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;touch-action:none}
  input[type=range]{height:32px}
- input[type=range]::-webkit-slider-thumb{width:22px;height:22px}
- input[type=range]::-moz-range-thumb{width:22px;height:22px}
+ input[type=range]::-webkit-slider-thumb{width:32px;height:20px;border-radius:10px}
+ input[type=range]::-moz-range-thumb{width:32px;height:20px;border-radius:10px}
  input[type=checkbox]{width:40px;height:24px;border-radius:12px}
  input[type=checkbox]::after{width:20px;height:20px}
  input[type=checkbox]:checked::after{transform:translateX(16px)}
@@ -924,7 +932,12 @@ function buildPanel(){
  {const sc=el('div','sec');const b=el('div','sec-b');b.style.paddingTop='10px';const w=el('div','ctl'),c=el('input');c.type='checkbox';c.checked=SND.on;c.onchange=()=>setSound(c.checked);w.append(c);row(b,'Sounds',w);sc.append(b);panel.append(sc)}
 }
 const FXR={};
-{let sT=0;panel.addEventListener('scroll',()=>{panel.classList.add('scrolling');clearTimeout(sT);sT=setTimeout(()=>panel.classList.remove('scrolling'),800)},{passive:true})}
+{let sT=0;const ft=el('div','pfade t'),fb=el('div','pfade b');
+ // edge fades: only while scrolling, only on an edge that has content past it
+ queueMicrotask(()=>{panel.prepend(ft);panel.append(fb)});
+ panel.addEventListener('scroll',()=>{panel.classList.add('scrolling');
+  ft.classList.toggle('on',panel.scrollTop>2);fb.classList.toggle('on',panel.scrollTop+panel.clientHeight<panel.scrollHeight-2);
+  clearTimeout(sT);sT=setTimeout(()=>panel.classList.remove('scrolling'),800)},{passive:true})}
 function setFilm(v){if(P.film===v)return;P.film=v;P.base=null;P.lvl=null;analyze();sync();dirty();commit();if(img&&v!=='none'){toast(v==='bw'?'Inverted as B&W negative':'Inverted as colour negative',1400);sound('invert')}}
 function buildPad(){
  const pad=el('div','pad');pad.id='pad';pad.tabIndex=0;pad.setAttribute('role','slider');pad.setAttribute('aria-label','Colour balance: left–right cool to warm, up–down magenta to green. Arrow keys move, Enter or 0 resets.');
